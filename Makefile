@@ -12,7 +12,8 @@ SRCS = src/main.c \
        src/errors.c \
        src/macro.c \
        src/symbol_table.c \
-       src/parser.c
+       src/parser.c\
+       src/first_pass.c
 
 # Object files
 OBJS = $(SRCS:.c=.o)
@@ -24,7 +25,8 @@ HEADERS = include/constants.h \
           include/errors.h \
           include/macro.h \
           include/symbol_table.h \
-          include/parser.h
+          include/parser.h\
+          include/first_pass.h
 
 # Default target
 all: $(TARGET)

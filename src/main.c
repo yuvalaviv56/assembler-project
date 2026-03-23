@@ -97,15 +97,26 @@ int process_file(const char *filename) {
     
     /* Stage 2: First Pass */
     printf("Stage 2: First pass...\n");
-    /* TODO: Implement first pass
-    result = first_pass(am_file, &symbol_table, &memory);
-    if (result == ERROR) {
-        fprintf(stderr, "Error: First pass failed for %s\n", am_file);
-        return ERROR;
+    {
+        SymbolTable symbol_table;
+        MemoryImage memory;
+    
+        symbol_table_init(&symbol_table);
+    
+        result = first_pass(am_file, &symbol_table, &memory);
+        if (result == ERROR) {
+            fprintf(stderr, "Error: First pass failed for %s\n", am_file);
+            symbol_table_free(&symbol_table);
+            return ERROR;
+        }
+        printf("  → Symbol table built\n");
+        printf("  → IC = %d, DC = %d\n", memory.IC, memory.DC);
+    
+        /* Debug: print symbol table */
+        symbol_table_print(&symbol_table);
+    
+        symbol_table_free(&symbol_table);
     }
-    printf("  → Symbol table built\n");
-    printf("  → IC = %d, DC = %d\n", memory.IC, memory.DC);
-    */
     
     /* Stage 3: Second Pass */
     printf("Stage 3: Second pass...\n");

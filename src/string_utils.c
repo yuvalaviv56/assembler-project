@@ -76,8 +76,8 @@ int is_empty_or_comment(const char *line) {
     
     p = skip_whitespace(line);
     
-    /* Empty line or comment */
-    return (*p == '\0' || *p == '\n' || *p == COMMENT_CHAR);
+    /* Empty line or comment (handle \r\n too) */
+    return (*p == '\0' || *p == '\n' || *p == '\r' || *p == COMMENT_CHAR);
 }
 
 /* Check if string is a valid label name */

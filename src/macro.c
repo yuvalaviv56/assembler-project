@@ -68,12 +68,9 @@ int expand_macros(const char *source, const char *output) {
             continue;
         }
         
-        /* Skip empty lines and comments (but write them to output if not in macro) */
+        /* Skip empty lines and comments - DON'T write them to output */
         if (is_empty_or_comment(line)) {
-            if (!in_macro_definition) {
-                fputs(line, out);
-            }
-            continue;
+            continue; /* Skip entirely, don't write to output */
         }
         
         /* Extract first word */
@@ -87,10 +84,6 @@ int expand_macros(const char *source, const char *output) {
             /* Extract macro name */
             line_ptr = skip_whitespace(line_ptr + strlen(word));
             extract_word(line_ptr, macro_name, MAX_LABEL_LENGTH + 1);
-
-            /* DEBUG */
-            fprintf(stderr, "DEBUG: Extracted macro name: '%s' (length: %d)\n", 
-                macro_name, (int)strlen(macro_name));
             
             /* Validate macro name */
             if (!is_valid_label(macro_name)) {
