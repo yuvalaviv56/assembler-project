@@ -6,3 +6,4 @@
 *.ext
 test_parser
 test_symbol_table
+assembler
