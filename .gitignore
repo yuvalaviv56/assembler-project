@@ -1,0 +1,8 @@
+
+*.o
+*.am
+*.ob
+*.ent
+*.ext
+test_parser
+test_symbol_table
