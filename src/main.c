@@ -77,67 +77,54 @@ int process_file(const char *filename) {
     char source_file[256];
     char am_file[256];
     int result;
+    SymbolTable symbol_table;
+    MemoryImage memory;
+    ExternalList externals;
     
-    /* TODO: Initialize data structures */
-    /* SymbolTable symbol_table; */
-    /* MemoryImage memory; */
-    /* ExternalList externals; */
+    symbol_table_init(&symbol_table);
+    externals.head = NULL;
+    externals.count = 0;
     
-    /* Build filenames */
     sprintf(source_file, "%s%s", filename, EXT_SOURCE);
     sprintf(am_file, "%s%s", filename, EXT_MACRO);
     
-    /* Stage 1: Pre-assembler (Macro Expansion) */
     printf("Stage 1: Macro expansion...\n");
     result = expand_macros(source_file, am_file);
     if (result == ERROR) {
         fprintf(stderr, "Error: Macro expansion failed for %s\n", source_file);
+        symbol_table_free(&symbol_table);
         return ERROR;
     }
     printf("  → Generated %s\n", am_file);
     
-    /* Stage 2: First Pass */
     printf("Stage 2: First pass...\n");
-    {
-        SymbolTable symbol_table;
-        MemoryImage memory;
-    
-        symbol_table_init(&symbol_table);
-    
-        result = first_pass(am_file, &symbol_table, &memory);
-        if (result == ERROR) {
-            fprintf(stderr, "Error: First pass failed for %s\n", am_file);
-            symbol_table_free(&symbol_table);
-            return ERROR;
-        }
-        printf("  → Symbol table built\n");
-        printf("  → IC = %d, DC = %d\n", memory.IC, memory.DC);
-    
-        /* Debug: print symbol table */
-        symbol_table_print(&symbol_table);
-    
-        symbol_table_free(&symbol_table);
-    }
-    
-    /* Stage 3: Second Pass */
-    printf("Stage 3: Second pass...\n");
-    /* TODO: Implement second pass
-    result = second_pass(am_file, &symbol_table, &memory, &externals);
+    result = first_pass(am_file, &symbol_table, &memory);
     if (result == ERROR) {
+        fprintf(stderr, "Error: First pass failed for %s\n", am_file);
+        symbol_table_free(&symbol_table);
+        return ERROR;
+    }
+    printf("  → Symbol table built\n");
+    printf("  → IC = %d, DC = %d\n", memory.IC, memory.DC);
+    
+    symbol_table_print(&symbol_table);
+    
+    printf("Stage 3: Second pass...\n");
+    result = execute_second_pass(am_file, &symbol_table, &memory, &externals);
+    if (result == FALSE) {
         fprintf(stderr, "Error: Second pass failed for %s\n", am_file);
+        symbol_table_free(&symbol_table);
         return ERROR;
     }
     printf("  → Encoding completed\n");
-    */
     
-    /* Stage 4: Generate Output Files */
     printf("Stage 4: Generating output files...\n");
-    /* TODO: Implement output generation
-    generate_object_file(filename, &memory);
-    generate_entries_file(filename, &symbol_table);
-    generate_externals_file(filename, &externals);
-    */
+    create_object_file(filename, &memory);
+    create_entries_file(filename, &symbol_table);
+    create_externals_file(filename, &externals);
     printf("  → Output files generated\n");
+    
+    symbol_table_free(&symbol_table);
     
     return SUCCESS;
 }

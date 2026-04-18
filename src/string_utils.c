@@ -27,7 +27,7 @@ char* trim(char *str) {
     
     /* Trim leading whitespace */
     start = str;
-    while (is_whitespace(*start)) {
+    while (is_whitespace(*start) || *start == '\n' || *start == '\r') {
         start++;
     }
     
