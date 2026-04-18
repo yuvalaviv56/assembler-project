@@ -1,7 +1,8 @@
-#include "../include/output.h"
-#include "../include/structures.h"
 #include <stdio.h>
 #include <string.h>
+#include "output.h"
+#include "structures.h"
+#include "globals.h"
 
 /* המרה להקסדצימלי */
 static void to_hex(int value, char *output) {
@@ -46,21 +47,21 @@ bool create_object_file(const char *base_name, int *code_img, int *data_img,
 }
 
 /* יצירת קובץ .ent */
-bool create_entries_file(const char *base_name, symbol_table *symbols) {
+bool create_entries_file(const char *base_name, SymbolTable *symbols) {
     FILE *fp;
     char filename[256];
-    symbol_node *current;
+    Symbol *current;
     int has_entries;
     
     has_entries = FALSE;
-    current = get_first_symbol(symbols);
+    current = symbols->head;;
     
     while (current != NULL) {
-        if (current->is_entry == TRUE) {
+        if (current->attributes & ATTR_ENTRY) {
             has_entries = TRUE;
             break;
         }
-        current = get_next_symbol(current);
+        current = current->next;
     }
     
     if (has_entries == FALSE) {
@@ -75,13 +76,13 @@ bool create_entries_file(const char *base_name, symbol_table *symbols) {
         return FALSE;
     }
     
-    current = get_first_symbol(symbols);
+    current = symbols->head;
     
     while (current != NULL) {
-        if (current->is_entry == TRUE) {
-            fprintf(fp, "%s %04d\n", current->name, current->address);
+        if (current->attributes & ATTR_ENTRY) {
+            fprintf(fp, "%s %04d\n", current->name, current->value);
         }
-        current = get_next_symbol(current);
+        current = current->next;
     }
     
     fclose(fp);

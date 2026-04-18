@@ -1,12 +1,13 @@
-#include "../include/second_pass.h"
-#include "../include/structures.h"
-#include "../include/parser.h"
-#include "../include/file_handler.h"
-#include "../include/error.h"
-#include "../include/string_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "second_pass.h"
+#include "structures.h"
+#include "parser.h"
+#include "file_handler.h"
+#include "error.h"
+#include "string_utils.h"
+#include "globals.h"
 
 static SymbolTable *sym_table;
 static MemoryImage *memory;

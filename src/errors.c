@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include "errors.h"
+#include "globals.h"
 
 /* Get error message for error type */
 const char* get_error_message(ErrorType type) {
