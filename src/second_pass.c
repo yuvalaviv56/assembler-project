@@ -39,7 +39,7 @@ static void encode_direct_addr(const char *label, int line_num) {
     if (sym->attributes & ATTR_EXTERNAL) {
         memory->code[current_IC].word = 0;
         memory->code[current_IC].are = ARE_EXTERNAL;
-        add_external_ref(label, 100 + current_IC);
+        add_external_ref(label, current_IC);
     } else {
         memory->code[current_IC].word = sym->value & 0xFFF;
         memory->code[current_IC].are = ARE_RELOCATABLE;
@@ -58,7 +58,7 @@ static void encode_relative_addr(const char *label, int line_num) {
         print_error(line_num, ERR_UNDEFINED_LABEL, clean_label);
         return;
     }
-    offset = sym->value - (100 + current_IC);
+    offset = sym->value - current_IC;
     memory->code[current_IC].word = offset & 0xFFF;
     memory->code[current_IC].are = ARE_ABSOLUTE;
     current_IC = current_IC + 1;
@@ -91,14 +91,14 @@ static void handle_instruction(const char *operation, const char *operands, int 
     char operands_copy[MAX_LINE_LENGTH];
     int num_operands, opcode, funct, num_expected;
     AddressingMode src_mode, dest_mode;
-    
+
     if (!get_operation_info(operation, &opcode, &funct, &num_expected)) return;
     current_IC = current_IC + 1;
     strcpy(operands_copy, operands);
     num_operands = parse_operands(operands_copy, source, dest, MAX_LINE_LENGTH);
     if (num_operands != num_expected) return;
     if (num_expected == 0) return;
-    
+
     if (num_expected == 2) {
         src_mode = identify_addressing_mode(source);
         dest_mode = identify_addressing_mode(dest);
@@ -108,7 +108,7 @@ static void handle_instruction(const char *operation, const char *operands, int 
             if (src_mode == MODE_DIRECT) encode_direct_addr(source, line_num);
             else if (src_mode == MODE_RELATIVE) encode_relative_addr(source, line_num);
             else current_IC = current_IC + 1;
-            
+
             if (dest_mode == MODE_DIRECT) encode_direct_addr(dest, line_num);
             else if (dest_mode == MODE_RELATIVE) encode_relative_addr(dest, line_num);
             else current_IC = current_IC + 1;
@@ -132,19 +132,19 @@ bool execute_second_pass(const char *filename, SymbolTable *symbols, MemoryImage
     char *line_after_label, *trimmed;
     int line_num = 0, error_found = FALSE;
     LineType line_type;
-    
+
     sym_table = symbols;
     memory = mem;
     ext_list = externals;
-    current_IC = 0;
+    current_IC = INITIAL_IC;
     externals_head = NULL;
-    
+
     file = fopen(filename, "r");
     if (file == NULL) {
         print_error(0, ERR_FILE_OPEN, filename);
         return FALSE;
     }
-    
+
     while (fgets(line_buffer, MAX_LINE_LENGTH, file)) {
         line_num = line_num + 1;
         trimmed = line_buffer;
@@ -155,7 +155,7 @@ bool execute_second_pass(const char *filename, SymbolTable *symbols, MemoryImage
         line_after_label = parse_label(trimmed, label, MAX_LABEL_LENGTH + 1);
         trimmed = line_after_label;
         trim(trimmed);
-        
+
         if (line_type == LINE_DIRECTIVE) {
             if (parse_directive(trimmed, directive, params, MAX_LINE_LENGTH)) {
                 if (strcmp(directive, DIR_ENTRY) == 0) {
@@ -168,7 +168,7 @@ bool execute_second_pass(const char *filename, SymbolTable *symbols, MemoryImage
             }
         }
     }
-    
+
     fclose(file);
     ext_list->head = externals_head;
     return error_found ? FALSE : TRUE;

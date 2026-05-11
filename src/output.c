@@ -25,7 +25,7 @@ bool create_object_file(const char *base_name, MemoryImage *memory) {
     
     for (i = 0; i < memory->ICF - 100; i++) {
         address = 100 + i;
-        to_hex(memory->code[i].word, hex);
+        to_hex(memory->code[100 + i].word, hex);
         fprintf(fp, "%04d %s\n", address, hex);
     }
     
