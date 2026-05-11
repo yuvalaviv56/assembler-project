@@ -89,16 +89,16 @@ static void handle_instruction(const char *operation, const char *operands, int 
     char source[MAX_LINE_LENGTH];
     char dest[MAX_LINE_LENGTH];
     char operands_copy[MAX_LINE_LENGTH];
-    int num_operands, opcode, funct, num_expected;
+    int num_operands, opcode, funct, num_expected, val;
     AddressingMode src_mode, dest_mode;
-
+    
     if (!get_operation_info(operation, &opcode, &funct, &num_expected)) return;
     current_IC = current_IC + 1;
     strcpy(operands_copy, operands);
     num_operands = parse_operands(operands_copy, source, dest, MAX_LINE_LENGTH);
     if (num_operands != num_expected) return;
     if (num_expected == 0) return;
-
+    
     if (num_expected == 2) {
         src_mode = identify_addressing_mode(source);
         dest_mode = identify_addressing_mode(dest);
@@ -107,17 +107,47 @@ static void handle_instruction(const char *operation, const char *operands, int 
         } else {
             if (src_mode == MODE_DIRECT) encode_direct_addr(source, line_num);
             else if (src_mode == MODE_RELATIVE) encode_relative_addr(source, line_num);
-            else current_IC = current_IC + 1;
-
+            else if (src_mode == MODE_IMMEDIATE) {
+                parse_integer(source + 1, &val);
+                memory->code[current_IC].word = encode_immediate(val);
+                memory->code[current_IC].are = ARE_ABSOLUTE;
+                current_IC = current_IC + 1;
+            } else if (src_mode == MODE_REGISTER) {
+                parse_register(source, &val);
+                memory->code[current_IC].word = encode_register(val);
+                memory->code[current_IC].are = ARE_ABSOLUTE;
+                current_IC = current_IC + 1;
+            }
+            
             if (dest_mode == MODE_DIRECT) encode_direct_addr(dest, line_num);
             else if (dest_mode == MODE_RELATIVE) encode_relative_addr(dest, line_num);
-            else current_IC = current_IC + 1;
+            else if (dest_mode == MODE_IMMEDIATE) {
+                parse_integer(dest + 1, &val);
+                memory->code[current_IC].word = encode_immediate(val);
+                memory->code[current_IC].are = ARE_ABSOLUTE;
+                current_IC = current_IC + 1;
+            } else if (dest_mode == MODE_REGISTER) {
+                parse_register(dest, &val);
+                memory->code[current_IC].word = encode_register(val);
+                memory->code[current_IC].are = ARE_ABSOLUTE;
+                current_IC = current_IC + 1;
+            }
         }
     } else if (num_expected == 1) {
         dest_mode = identify_addressing_mode(dest);
         if (dest_mode == MODE_DIRECT) encode_direct_addr(dest, line_num);
         else if (dest_mode == MODE_RELATIVE) encode_relative_addr(dest, line_num);
-        else current_IC = current_IC + 1;
+        else if (dest_mode == MODE_IMMEDIATE) {
+            parse_integer(dest + 1, &val);
+            memory->code[current_IC].word = encode_immediate(val);
+            memory->code[current_IC].are = ARE_ABSOLUTE;
+            current_IC = current_IC + 1;
+        } else if (dest_mode == MODE_REGISTER) {
+            parse_register(dest, &val);
+            memory->code[current_IC].word = encode_register(val);
+            memory->code[current_IC].are = ARE_ABSOLUTE;
+            current_IC = current_IC + 1;
+        }
     }
 }
 
