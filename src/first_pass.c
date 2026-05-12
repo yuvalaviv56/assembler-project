@@ -14,7 +14,6 @@
 #include "constants.h"
 #include "globals.h"
 
-/* Operation table - maps operation names to opcodes and funct codes */
 typedef struct {
     const char *name;
     int opcode;
@@ -42,14 +41,13 @@ static const OperationInfo OPERATIONS[] = {
     {NULL,   0,  0,  0}
 };
 
-/* Get operation information */
 int get_operation_info(const char *operation, int *opcode, int *funct, int *num_operands) {
     int i;
-    
+
     if (operation == NULL) {
         return FALSE;
     }
-    
+
     for (i = 0; OPERATIONS[i].name != NULL; i++) {
         if (strcmp(operation, OPERATIONS[i].name) == 0) {
             if (opcode) *opcode = OPERATIONS[i].opcode;
@@ -58,265 +56,252 @@ int get_operation_info(const char *operation, int *opcode, int *funct, int *num_
             return TRUE;
         }
     }
-    
+
     return FALSE;
 }
 
-/* Calculate instruction length in memory words */
 int calculate_instruction_length(const char *operation, const char *source, const char *dest) {
-    int length = 1; /* First word always present */
+    int length = 1;
     int num_operands;
     AddressingMode src_mode, dest_mode;
-    
-    /* Get number of operands */
+
     if (!get_operation_info(operation, NULL, NULL, &num_operands)) {
-        return 1; /* Default if operation not found */
+        return 1;
     }
-    
-    /* No operands - just first word */
+
     if (num_operands == 0) {
         return 1;
     }
-    
-    /* One operand (destination only) */
+
     if (num_operands == 1 && dest != NULL) {
-        length++; /* Each operand needs a word */
+        length++;
         return length;
     }
-    
-    /* Two operands */
+
     if (num_operands == 2 && source != NULL && dest != NULL) {
         src_mode = identify_addressing_mode(source);
         dest_mode = identify_addressing_mode(dest);
-        
-        /* Special case: both registers can share one additional word */
+
         if (src_mode == MODE_REGISTER && dest_mode == MODE_REGISTER) {
-            length += 2; /* Each register gets its own word */
+            length += 2;
         } else {
-            /* Each operand needs its own word */
-            length++;
-            length++;
+            if (src_mode != MODE_REGISTER) length++;
+            else length++;
+            if (dest_mode != MODE_REGISTER) length++;
+            else length++;
         }
     }
-    
+
     return length;
 }
 
-/* Encode first word of instruction */
-static void encode_first_word(MemoryImage *memory, const char *operation, 
+static void encode_first_word(MemoryImage *memory, const char *operation,
                               const char *source, const char *dest) {
     int opcode, funct, num_operands;
     unsigned int word = 0;
     AddressingMode src_mode = MODE_IMMEDIATE, dest_mode = MODE_IMMEDIATE;
-    
-    /* Get operation info */
+
     if (!get_operation_info(operation, &opcode, &funct, &num_operands)) {
         return;
     }
-    
+
     /* Encode opcode (bits 11-8) */
     word |= ((unsigned int)opcode & 0xF) << 8;
-    
+
     /* Encode funct (bits 7-4) */
     word |= ((unsigned int)funct & 0xF) << 4;
-    
-    /* Encode source addressing mode (bits 3-2) */
-    if (num_operands == 2 && source != NULL) {
-        src_mode = identify_addressing_mode(source);
-        word |= ((unsigned int)src_mode & 0x3) << 2;
-    }
-    
+
     /* Encode dest addressing mode (bits 1-0) */
     if (num_operands >= 1 && dest != NULL) {
         dest_mode = identify_addressing_mode(dest);
         word |= ((unsigned int)dest_mode & 0x3) << 0;
     }
-    
-    /* Store in code image */
+
+    /* Encode source addressing mode (bits 3-2) */
+    if (num_operands == 2 && source != NULL) {
+        src_mode = identify_addressing_mode(source);
+        word |= ((unsigned int)src_mode & 0x3) << 2;
+    }
+
     memory->code[memory->IC].word = word & 0xFFF;
     memory->code[memory->IC].are = ARE_ABSOLUTE;
 }
 
-/* Process .data directive */
+/* Validate a single operand - checks for invalid registers like r8, r9 */
+static int validate_operand(const char *operand, int line_num) {
+    int reg_num;
+
+    if (operand == NULL || *operand == '\0') return SUCCESS;
+
+    /* Check for register-like syntax with invalid number e.g. r8, r9 */
+    if (operand[0] == REGISTER_PREFIX && isdigit((unsigned char)operand[1])) {
+        if (!parse_register(operand, &reg_num)) {
+            print_error(line_num, ERR_INVALID_REGISTER, operand);
+            return ERROR;
+        }
+    }
+
+    return SUCCESS;
+}
+
 int process_data_directive(const char *params, int line_num, MemoryImage *memory) {
     char params_copy[MAX_LINE_LENGTH];
     char *token;
     int value;
-    
+
     if (params == NULL || *params == '\0') {
         print_error(line_num, ERR_EMPTY_DIRECTIVE, NULL);
         return ERROR;
     }
-    
+
     safe_strcpy(params_copy, params, MAX_LINE_LENGTH);
-    
-    /* Parse comma-separated integers */
+
     token = strtok(params_copy, ",");
     while (token != NULL) {
         trim(token);
-        
+
         if (!parse_integer(token, &value)) {
             print_error(line_num, ERR_INVALID_NUMBER, token);
             return ERROR;
         }
-        
-        /* Store in data image */
+
         if (memory->DC >= MEMORY_SIZE) {
             print_error(line_num, ERR_MEMORY_OVERFLOW, NULL);
             return ERROR;
         }
-        
+
         memory->data[memory->DC].word = value & 0xFFF;
         memory->data[memory->DC].are = ARE_ABSOLUTE;
         memory->DC++;
-        
+
         token = strtok(NULL, ",");
     }
-    
+
     return SUCCESS;
 }
 
-/* Process .string directive */
 int process_string_directive(const char *params, int line_num, MemoryImage *memory) {
     const char *p;
     int in_quotes = FALSE;
-    
+
     if (params == NULL || *params == '\0') {
         print_error(line_num, ERR_EMPTY_DIRECTIVE, NULL);
         return ERROR;
     }
-    
+
     p = skip_whitespace(params);
-    
-    /* Must start with quote */
+
     if (*p != STRING_QUOTE) {
         print_error(line_num, ERR_MISSING_QUOTE, NULL);
         return ERROR;
     }
-    
-    p++; /* Skip opening quote */
+
+    p++;
     in_quotes = TRUE;
-    
-    /* Encode each character */
+
     while (*p != '\0' && *p != '\n') {
         if (*p == STRING_QUOTE) {
             in_quotes = FALSE;
             break;
         }
-        
+
         if (memory->DC >= MEMORY_SIZE) {
             print_error(line_num, ERR_MEMORY_OVERFLOW, NULL);
             return ERROR;
         }
-        
-        /* Store ASCII value */
+
         memory->data[memory->DC].word = (unsigned int)(*p) & 0xFFF;
         memory->data[memory->DC].are = ARE_ABSOLUTE;
         memory->DC++;
-        
+
         p++;
     }
-    
+
     if (in_quotes) {
         print_error(line_num, ERR_MISSING_QUOTE, NULL);
         return ERROR;
     }
-    
-    /* Add null terminator */
+
     if (memory->DC >= MEMORY_SIZE) {
         print_error(line_num, ERR_MEMORY_OVERFLOW, NULL);
         return ERROR;
     }
-    
+
     memory->data[memory->DC].word = 0;
     memory->data[memory->DC].are = ARE_ABSOLUTE;
     memory->DC++;
-    
+
     return SUCCESS;
 }
 
-/* Process .entry directive (mark for second pass) */
 int process_entry_directive(const char *params, int line_num) {
-    /* Entry processing is done in second pass */
-    /* Just validate that parameter exists */
     if (params == NULL || *params == '\0') {
         print_error(line_num, ERR_EMPTY_DIRECTIVE, NULL);
         return ERROR;
     }
-    
-    /* Validation will happen in second pass */
+
     return SUCCESS;
 }
 
-/* Process .extern directive */
 int process_extern_directive(const char *params, int line_num, SymbolTable *symbol_table) {
     char symbol_name[MAX_LABEL_LENGTH + 1];
-    
+
     if (params == NULL || *params == '\0') {
         print_error(line_num, ERR_EMPTY_DIRECTIVE, NULL);
         return ERROR;
     }
-    
-    /* Extract symbol name */
+
     safe_strcpy(symbol_name, params, MAX_LABEL_LENGTH + 1);
     trim(symbol_name);
-    
-    /* Validate symbol name */
+
     if (!is_valid_label(symbol_name)) {
         print_error(line_num, ERR_INVALID_LABEL, symbol_name);
         return ERROR;
     }
-    
-    /* Add to symbol table with EXTERNAL attribute */
+
     if (!symbol_table_add(symbol_table, symbol_name, 0, ATTR_EXTERNAL)) {
         print_error(line_num, ERR_DUPLICATE_LABEL, symbol_name);
         return ERROR;
     }
-    
+
     return SUCCESS;
 }
 
-/* Process directive line */
 int process_directive(const char *directive, const char *params, const char *label,
                       int line_num, SymbolTable *symbol_table, MemoryImage *memory) {
-    
-    /* If there's a label, add it to symbol table */
+
     if (label != NULL && *label != '\0') {
-        /* For .entry and .extern, labels are not allowed */
         if (strcmp(directive, DIR_ENTRY) == 0 || strcmp(directive, DIR_EXTERN) == 0) {
             print_error(line_num, ERR_NONE, "Label not allowed with .entry or .extern");
             return ERROR;
         }
-        
-        /* Add label with DATA attribute and current DC */
+
         if (!symbol_table_add(symbol_table, label, memory->DC, ATTR_DATA)) {
             print_error(line_num, ERR_DUPLICATE_LABEL, label);
             return ERROR;
         }
     }
-    
-    /* Process specific directive */
+
     if (strcmp(directive, DIR_DATA) == 0) {
         return process_data_directive(params, line_num, memory);
     }
-    
+
     if (strcmp(directive, DIR_STRING) == 0) {
         return process_string_directive(params, line_num, memory);
     }
-    
+
     if (strcmp(directive, DIR_ENTRY) == 0) {
         return process_entry_directive(params, line_num);
     }
-    
+
     if (strcmp(directive, DIR_EXTERN) == 0) {
         return process_extern_directive(params, line_num, symbol_table);
     }
-    
+
     print_error(line_num, ERR_INVALID_DIRECTIVE, directive);
     return ERROR;
 }
 
-/* Process instruction line */
 int process_instruction(const char *operation, const char *operands, const char *label,
                         int line_num, SymbolTable *symbol_table, MemoryImage *memory) {
     char source[MAX_LINE_LENGTH] = "";
@@ -325,54 +310,53 @@ int process_instruction(const char *operation, const char *operands, const char 
     int num_operands_parsed;
     int num_operands_expected;
     int instruction_length;
-    
-    /* If there's a label, add it to symbol table with CODE attribute */
+
     if (label != NULL && *label != '\0') {
         if (!symbol_table_add(symbol_table, label, memory->IC, ATTR_CODE)) {
             print_error(line_num, ERR_DUPLICATE_LABEL, label);
             return ERROR;
         }
     }
-    
-    /* Validate operation */
+
     if (!get_operation_info(operation, NULL, NULL, &num_operands_expected)) {
         print_error(line_num, ERR_INVALID_INSTRUCTION, operation);
         return ERROR;
     }
-    
-    /* Parse operands */
+
     safe_strcpy(operands_copy, operands, MAX_LINE_LENGTH);
     num_operands_parsed = parse_operands(operands_copy, source, dest, MAX_LINE_LENGTH);
-    
-    /* Validate operand count */
+
     if (num_operands_parsed != num_operands_expected) {
         print_error(line_num, ERR_OPERAND_COUNT, operation);
         return ERROR;
     }
-    
-    /* Calculate instruction length */
-    instruction_length = calculate_instruction_length(operation, 
+
+    /* Validate operands for invalid registers */
+    if (num_operands_expected == 2) {
+        if (validate_operand(source, line_num) == ERROR) return ERROR;
+    }
+    if (num_operands_expected >= 1) {
+        if (validate_operand(dest, line_num) == ERROR) return ERROR;
+    }
+
+    instruction_length = calculate_instruction_length(operation,
                                                       num_operands_expected == 2 ? source : NULL,
                                                       num_operands_expected >= 1 ? dest : NULL);
-    
-    /* Check memory overflow */
+
     if (memory->IC + instruction_length > MEMORY_SIZE) {
         print_error(line_num, ERR_MEMORY_OVERFLOW, NULL);
         return ERROR;
     }
-    
-    /* Encode first word */
-    encode_first_word(memory, operation, 
+
+    encode_first_word(memory, operation,
                      num_operands_expected == 2 ? source : NULL,
                      num_operands_expected >= 1 ? dest : NULL);
-    
-    /* Advance IC by instruction length */
+
     memory->IC += instruction_length;
-    
+
     return SUCCESS;
 }
 
-/* Main first pass function */
 int first_pass(const char *filename, SymbolTable *symbol_table, MemoryImage *memory) {
     FILE *file;
     char line[MAX_LINE_LENGTH];
@@ -385,47 +369,39 @@ int first_pass(const char *filename, SymbolTable *symbol_table, MemoryImage *mem
     int line_num = 0;
     int error_found = FALSE;
     LineType line_type;
-    
-    /* Open file */
+
     file = fopen(filename, "r");
     if (!file) {
         print_error(0, ERR_FILE_OPEN, filename);
         return ERROR;
     }
-    
-    /* Initialize memory */
+
     memory->IC = INITIAL_IC;
     memory->DC = INITIAL_DC;
-    
-    /* Process each line */
+
     while (fgets(line, MAX_LINE_LENGTH, file)) {
         line_num++;
-        
-        /* Check line length */
+
         if (strlen(line) >= MAX_LINE_LENGTH - 1 && line[strlen(line) - 1] != '\n') {
             print_error(line_num, ERR_LINE_TOO_LONG, NULL);
             error_found = TRUE;
             continue;
         }
-        
-        /* Determine line type */
+
         line_type = parse_line_type(line);
-        
+
         if (line_type == LINE_EMPTY) {
-            continue; /* Skip empty lines and comments */
+            continue;
         }
-        
-        /* Extract label if present */
+
         line_after_label = parse_label(line, label, MAX_LABEL_LENGTH + 1);
-        
-        /* Validate label if present */
+
         if (label[0] != '\0' && !is_valid_label(label)) {
             print_error(line_num, ERR_INVALID_LABEL, label);
             error_found = TRUE;
             continue;
         }
-        
-        /* Process based on line type */
+
         if (line_type == LINE_DIRECTIVE) {
             if (parse_directive(line_after_label, directive, params, MAX_LINE_LENGTH)) {
                 if (process_directive(directive, params, label[0] != '\0' ? label : NULL,
@@ -453,20 +429,17 @@ int first_pass(const char *filename, SymbolTable *symbol_table, MemoryImage *mem
             error_found = TRUE;
         }
     }
-    
+
     fclose(file);
-    
-    /* If errors found, stop here */
+
     if (error_found) {
         return ERROR;
     }
-    
-    /* Save final IC and DC values */
+
     memory->ICF = memory->IC;
     memory->DCF = memory->DC;
-    
-    /* Update data symbols: add ICF to their values */
+
     symbol_table_update_data_symbols(symbol_table, memory->ICF);
-    
+
     return SUCCESS;
 }

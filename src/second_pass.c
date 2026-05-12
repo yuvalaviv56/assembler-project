@@ -15,6 +15,7 @@ static SymbolTable *sym_table;
 static MemoryImage *memory;
 static ExternalList *ext_list;
 static int current_IC;
+static int had_error = 0;
 static ExternalRef *externals_head = NULL;
 
 static void add_external_ref(const char *symbol, int address) {
@@ -34,6 +35,7 @@ static void encode_direct_addr(const char *label, int line_num) {
     sym = symbol_table_find(sym_table, label);
     if (sym == NULL) {
         print_error(line_num, ERR_UNDEFINED_LABEL, label);
+        had_error = 1;
         return;
     }
     if (sym->attributes & ATTR_EXTERNAL) {
@@ -56,6 +58,7 @@ static void encode_relative_addr(const char *label, int line_num) {
     sym = symbol_table_find(sym_table, clean_label);
     if (sym == NULL) {
         print_error(line_num, ERR_UNDEFINED_LABEL, clean_label);
+        had_error = 1;
         return;
     }
     offset = sym->value - current_IC;
@@ -69,6 +72,7 @@ static void handle_entry_directive(const char *params, int line_num) {
     Symbol *sym;
     if (params == NULL || *params == '\0') {
         print_error(line_num, ERR_EMPTY_DIRECTIVE, NULL);
+        had_error = 1;
         return;
     }
     strcpy(label, params);
@@ -76,10 +80,12 @@ static void handle_entry_directive(const char *params, int line_num) {
     sym = symbol_table_find(sym_table, label);
     if (sym == NULL) {
         print_error(line_num, ERR_UNDEFINED_LABEL, label);
+        had_error = 1;
         return;
     }
     if (sym->attributes & ATTR_EXTERNAL) {
         print_error(line_num, ERR_NONE, "Cannot mark external symbol as entry");
+        had_error = 1;
         return;
     }
     symbol_table_update_attributes(sym_table, label, ATTR_ENTRY);
@@ -175,6 +181,7 @@ bool execute_second_pass(const char *filename, SymbolTable *symbols, MemoryImage
     ext_list = externals;
     current_IC = INITIAL_IC;
     externals_head = NULL;
+    had_error = 0;
 
     file = fopen(filename, "r");
     if (file == NULL) {
@@ -208,5 +215,10 @@ bool execute_second_pass(const char *filename, SymbolTable *symbols, MemoryImage
 
     fclose(file);
     ext_list->head = externals_head;
+
+    if (had_error) {
+        error_found = TRUE;
+    }
+
     return error_found ? FALSE : TRUE;
 }
