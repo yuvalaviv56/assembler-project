@@ -89,25 +89,26 @@ static void handle_instruction(const char *operation, const char *operands, int 
     char source[MAX_LINE_LENGTH];
     char dest[MAX_LINE_LENGTH];
     char operands_copy[MAX_LINE_LENGTH];
-    int num_operands, opcode, funct, num_expected, val, src_reg, dest_reg, src_val, dest_val;
+    int num_operands, opcode, funct, num_expected, val, src_reg, dest_reg;
     AddressingMode src_mode, dest_mode;
-    
+
     if (!get_operation_info(operation, &opcode, &funct, &num_expected)) return;
     current_IC = current_IC + 1;
     strcpy(operands_copy, operands);
     num_operands = parse_operands(operands_copy, source, dest, MAX_LINE_LENGTH);
     if (num_operands != num_expected) return;
     if (num_expected == 0) return;
-    
+
     if (num_expected == 2) {
         src_mode = identify_addressing_mode(source);
         dest_mode = identify_addressing_mode(dest);
         if (src_mode == MODE_REGISTER && dest_mode == MODE_REGISTER) {
             parse_register(source, &src_reg);
             parse_register(dest, &dest_reg);
-            src_val = encode_register(src_reg);
-            dest_val = encode_register(dest_reg);
-            memory->code[current_IC].word = (src_val << 6) | dest_val;
+            memory->code[current_IC].word = encode_register(src_reg);
+            memory->code[current_IC].are = ARE_ABSOLUTE;
+            current_IC = current_IC + 1;
+            memory->code[current_IC].word = encode_register(dest_reg);
             memory->code[current_IC].are = ARE_ABSOLUTE;
             current_IC = current_IC + 1;
         } else {
@@ -124,7 +125,7 @@ static void handle_instruction(const char *operation, const char *operands, int 
                 memory->code[current_IC].are = ARE_ABSOLUTE;
                 current_IC = current_IC + 1;
             }
-            
+
             if (dest_mode == MODE_DIRECT) encode_direct_addr(dest, line_num);
             else if (dest_mode == MODE_RELATIVE) encode_relative_addr(dest, line_num);
             else if (dest_mode == MODE_IMMEDIATE) {

@@ -91,7 +91,7 @@ int calculate_instruction_length(const char *operation, const char *source, cons
         
         /* Special case: both registers can share one additional word */
         if (src_mode == MODE_REGISTER && dest_mode == MODE_REGISTER) {
-            length++; /* One word for both registers */
+            length += 2; /* Each register gets its own word */
         } else {
             /* Each operand needs its own word */
             length++;
