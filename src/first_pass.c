@@ -80,11 +80,7 @@ int calculate_instruction_length(const char *operation, const char *source, cons
     
     /* One operand (destination only) */
     if (num_operands == 1 && dest != NULL) {
-        dest_mode = identify_addressing_mode(dest);
-        /* Register mode doesn't need additional word in first pass (combined in first word) */
-        if (dest_mode != MODE_REGISTER) {
-            length++;
-        }
+        length++; /* Each operand needs a word */
         return length;
     }
     
@@ -97,9 +93,9 @@ int calculate_instruction_length(const char *operation, const char *source, cons
         if (src_mode == MODE_REGISTER && dest_mode == MODE_REGISTER) {
             length++; /* One word for both registers */
         } else {
-            /* Each non-register operand needs its own word */
-            if (src_mode != MODE_REGISTER) length++;
-            if (dest_mode != MODE_REGISTER) length++;
+            /* Each operand needs its own word */
+            length++;
+            length++;
         }
     }
     

@@ -89,7 +89,7 @@ static void handle_instruction(const char *operation, const char *operands, int 
     char source[MAX_LINE_LENGTH];
     char dest[MAX_LINE_LENGTH];
     char operands_copy[MAX_LINE_LENGTH];
-    int num_operands, opcode, funct, num_expected, val;
+    int num_operands, opcode, funct, num_expected, val, src_reg, dest_reg, src_val, dest_val;
     AddressingMode src_mode, dest_mode;
     
     if (!get_operation_info(operation, &opcode, &funct, &num_expected)) return;
@@ -103,6 +103,12 @@ static void handle_instruction(const char *operation, const char *operands, int 
         src_mode = identify_addressing_mode(source);
         dest_mode = identify_addressing_mode(dest);
         if (src_mode == MODE_REGISTER && dest_mode == MODE_REGISTER) {
+            parse_register(source, &src_reg);
+            parse_register(dest, &dest_reg);
+            src_val = encode_register(src_reg);
+            dest_val = encode_register(dest_reg);
+            memory->code[current_IC].word = (src_val << 6) | dest_val;
+            memory->code[current_IC].are = ARE_ABSOLUTE;
             current_IC = current_IC + 1;
         } else {
             if (src_mode == MODE_DIRECT) encode_direct_addr(source, line_num);
