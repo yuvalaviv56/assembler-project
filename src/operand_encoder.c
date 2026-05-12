@@ -12,7 +12,7 @@ int encode_register(int reg_num) {
     if (reg_num < 0 || reg_num > 7) {
         return 0;
     }
-    return (1 << reg_num);
+    return reg_num;
 }
 
 int encode_operand(const char *operand, int mode) {

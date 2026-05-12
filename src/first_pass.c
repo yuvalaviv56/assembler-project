@@ -114,21 +114,22 @@ static void encode_first_word(MemoryImage *memory, const char *operation,
         return;
     }
     
-    /* Encode opcode (bits 11-14) */
-    word |= ((unsigned int)opcode & 0xF) << 11;
+    /* Encode opcode (bits 11-8) */
+    word |= ((unsigned int)opcode & 0xF) << 8;
     
-    /* Encode funct (bits 7-10) */
-    word |= ((unsigned int)funct & 0xF) << 7;
+    /* Encode funct (bits 7-4) */
+    word |= ((unsigned int)funct & 0xF) << 4;
     
-    /* Encode addressing modes */
-    if (num_operands >= 1 && dest != NULL) {
-        dest_mode = identify_addressing_mode(dest);
-        word |= ((unsigned int)dest_mode & 0x3) << 3;
-    }
-    
+    /* Encode source addressing mode (bits 3-2) */
     if (num_operands == 2 && source != NULL) {
         src_mode = identify_addressing_mode(source);
-        word |= ((unsigned int)src_mode & 0x3) << 5;
+        word |= ((unsigned int)src_mode & 0x3) << 2;
+    }
+    
+    /* Encode dest addressing mode (bits 1-0) */
+    if (num_operands >= 1 && dest != NULL) {
+        dest_mode = identify_addressing_mode(dest);
+        word |= ((unsigned int)dest_mode & 0x3) << 0;
     }
     
     /* Store in code image */
