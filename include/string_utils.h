@@ -1,79 +1,123 @@
 /*
  * string_utils.h
- * String manipulation utility functions
+ * פונקציות עזר לטיפול במחרוזות
+ * 
+ * קובץ זה מכיל פונקציות שמטפלות בעיבוד מחרוזות לאורך כלל תהליך האסמבלר
+ * מטפל בהסרת רווחים בדיקת תקינות שמות וחילוץ מילים
+ * 
+ * פונקציות אלה משמשות את כלל חלקי האסמבלר מהפרסר ועד המעברים
  */
 
 #ifndef STRING_UTILS_H
 #define STRING_UTILS_H
 
 /*
- * Remove leading and trailing whitespace from a string
- * Modifies the string in place
- * Parameters:
- *   str - String to trim
- * Returns: Pointer to the trimmed string
+ * פונ' אשר מסירה רווחים מתחילתה וסופה של המחרוזת
+ * 
+ * הפונקציה משנה את המחרוזת עצמה 
+ * מסירה רווחים טאבים ותווי שורה חדשה מההתחלה והסוף
+ * 
+ * פרמטרים:
+ *   str - מצביע למחרוזת לניקוי
+ * 
+ * מחזירה: מצביע למחרוזת המנוקה
  */
 char* trim(char *str);
 
 /*
- * Skip leading whitespace in a string
- * Does NOT modify the string
- * Parameters:
- *   str - String to process
- * Returns: Pointer to first non-whitespace character
+ * פונ' אשר מדלגת על רווחים בתחילת המחרוזת
+ * 
+ * פונקציה זו אינה משנה את המחרוזת המקורית
+ * היא מחזירה מצביע לתו הראשון שאינו רווח
+ * 
+ * פרמטרים:
+ *   str - מצביע למחרוזת
+ * 
+ * מחזירה: מצביע לתו הראשון שאינו רווח או טאב
  */
 char* skip_whitespace(const char *str);
 
 /*
- * Check if a line is empty or contains only whitespace/comment
- * Parameters:
- *   line - Line to check
- * Returns: TRUE if empty/comment, FALSE otherwise
- */
+ * פונ' אשר בודקת אם מדובר בשורה ריקה או הערה
+ * 
+ * שורה נחשבת ריקה אם אין בה כלום או רק רווחים
+ * שורת הערה מזוהה ע"י כך שמתחילה בנקודה-פסיק אחרי הרווחים
+ * 
+ * פרמטרים:
+ *   line - מצביע לשורה לבדיקה
+ * 
+ * : TRUE אם הצליח ליצור את הקובץ 
+ *          FALSE אם נכשל*/
+ 
 int is_empty_or_comment(const char *line);
 
 /*
- * Check if a string is a valid label name
- * Valid: starts with letter, contains letters/digits, max 31 chars
- * Parameters:
- *   str - String to check
- * Returns: TRUE if valid label, FALSE otherwise
- */
+ * פונ' אשר בודקת אם מחרוזת היא שם תווית חוקי
+ * 
+ * תווית מוגדרת חוקית אם מתחילה באות
+ * מכילה רק אותיות ספרות או קו תחתון
+ * מוגדרת להיות עד 31 תווים
+ * ולא להיות מילה שמורה
+ * 
+ * פרמטרים:
+ *   str - מצביע למחרוזת לבדיקה
+ * 
+ * מחזירה:: TRUE אם הצליח ליצור את הקובץ 
+ *           FALSE אם נכשל*/
 int is_valid_label(const char *str);
 
 /*
- * Check if a string is a reserved word (instruction/directive/register)
- * Parameters:
- *   str - String to check
- * Returns: TRUE if reserved, FALSE otherwise
- */
+ * פונ' אשר בודקת אם מחרוזת היא מילה שמורה
+ * 
+ * מילים שמורות כוללות פקודות הוראות או מילות מפתח של מקרואים ורגיסטרים
+ * אין להשתמש במילים אלו כשמות תוויות
+ * 
+ * פרמטרים:
+ *   str - מצביע למחרוזת לבדיקה
+ * 
+ * מחזירה: : TRUE אם הצליח ליצור את הקובץ 
+ *          FALSE אם נכשל*/
 int is_reserved_word(const char *str);
 
 /*
- * Extract the first word from a string
- * Parameters:
- *   str - Source string
- *   dest - Destination buffer
- *   max_len - Maximum length to copy
- * Returns: Pointer to the rest of the string after the word
+ * פונ' אשר מחלצת את המילה הראשונה ממחרוזת
+ * 
+ * המילה נחתכת במקום שיש רווח פסיק נקודתיים או סוף שורה
+ * הפונקציה מעתיקה את המילה לבאפר היעד
+ * 
+ * פרמטרים:
+ *   str - מצביע למחרוזת המקור
+ *   dest - מצביע לבאפר היעד
+ *   max_len - אורך מקסימלי להעתקה
+ * 
+ * מחזירה: מצביע לשאר המחרוזת אחרי המילה שחולצה
  */
 char* extract_word(char *str, char *dest, int max_len);
 
 /*
- * Check if character is whitespace (space or tab)
- * Parameters:
- *   c - Character to check
- * Returns: TRUE if whitespace, FALSE otherwise
- */
+ * בודקת אם תו הוא רווח
+ * 
+ * מזהה רווח או טאב כרווחים
+ * לא מזהה שורה חדשה כרווח
+ * 
+ * פרמטרים:
+ *   c - התו לבדיקה
+ * 
+ * מחזירה: : TRUE אם הצליח ליצור את הקובץ 
+            FALSE אם נכשל*/
 int is_whitespace(char c);
 
-/*
- * Copy a string safely (like strncpy but always null-terminates)
- * Parameters:
- *   dest - Destination buffer
- *   src - Source string
- *   n - Maximum number of characters to copy
+/*רגילה
+ *פונ' אשר מעתיקה מחרוזת בצורה בטוחה
+ * 
+ *  null אך תמיד שמה בסוףstrncpy-דומה ל 
+ *  הרגילה strcpy מונעת שריפת זיכרון שיכולה לקרות עם הפונקציה  
+ * 
+ * פרמטרים:
+ *   dest - מצביע לבאפר היעד
+ *   src - מצביע למחרוזת המקור
+ *   n - מספר מקסימלי של תווים להעתיק
  */
 void safe_strcpy(char *dest, const char *src, int n);
 
-#endif /* STRING_UTILS_H */
+#endif

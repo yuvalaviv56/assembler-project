@@ -1,6 +1,11 @@
 /*
  * symbol_table.h
- * Symbol table operations
+ * פעולות על טבלת הסמלים
+ * 
+ * טבלת הסמלים הינה מבנה הנתונים מרכזי שמכיל את כל התוויות בקוד
+ * כל סמל מכיל שם כתובת ותכונות
+ * 
+ * הטבלה נבנית במעבר הראשון ומשמשת במעבר השני למילוי כתובות
  */
 
 #ifndef SYMBOL_TABLE_H
@@ -9,54 +14,134 @@
 #include "structures.h"
 
 /*
- * Initialize an empty symbol table
+ * מאתחלת טבלת סמלים ריקה
+ * 
+ * מכינה את הטבלה לשימוש על ידי איפוס הראש והמונה
+ * נדרשת קריאה לפונקציה זו לפני הוספת סמלים
+ * 
+ * פרמטרים:
+ *   table - מצביע לטבלת הסמלים
  */
 void symbol_table_init(SymbolTable *table);
 
 /*
- * Add a new symbol to the table
- * Returns: TRUE if added successfully, FALSE if duplicate or error
+ * מוסיפה סמל חדש לטבלה
+ * 
+ * הפונקציה בודקת שהסמל לא קיים כבר ואז יוצרת רשומה חדשה
+ * הסמל מתווסף בראש הרשימה משיקולי יעילות
+ * 
+ * פרמטרים:
+ *   table - מצביע לטבלת הסמלים
+ *   name - שם הסמל
+ *   value - הכתובת של הסמל
+ *   attributes - תכונות הסמל כמו CODE DATA ENTRY או EXTERNAL
+ * 
+ * מחזירה: TRUE אם הסמל נוסף בהצלחה 
+ *          FALSE אם הוא כפול או אם הייתה שגיאה
  */
 int symbol_table_add(SymbolTable *table, const char *name, int value, unsigned int attributes);
 
 /*
- * Find a symbol in the table
- * Returns: Pointer to symbol if found, NULL otherwise
+ * פונ' אשר מחפשת סמל בטבלה לפי שם
+ * 
+ * הפונקציה עוברת על כלל הסמלים ומשווה שמות
+ * משמשת לבדיקת קיום ולמציאת סמלים במעבר השני
+ * 
+ * פרמטרים:
+ *   table - מצביע לטבלת הסמלים
+ *   name - שם הסמל לחיפוש
+ * 
+ * אם לא נמצאNullמחזירה: מצביע לסמל אם נמצא ומחזירה 
  */
 Symbol* symbol_table_find(SymbolTable *table, const char *name);
 
 /*
- * Update a symbol's attributes (e.g., add ATTR_ENTRY)
- * Returns: TRUE if updated, FALSE if not found
- */
+ * מעדכנת את תכונות הסמל
+ * 
+ *לסמל שכבר קיים ENTRYמשמשת בעיקר להוספת תכונת  
+ * התכונות מתווספות עם OR ביטים כך שהתכונות הישנות נשמרות
+ * 
+ * פרמטרים:
+ *   table - מצביע לטבלת הסמלים
+ *   name - שם הסמל
+ *   attributes - התכונות להוספה
+ * 
+ * מחזירה: TRUE אם הצליח ליצור את הקובץ 
+            FALSE אם נכשל*/
+ 
 int symbol_table_update_attributes(SymbolTable *table, const char *name, unsigned int attributes);
 
 /*
- * Update a symbol's value
- * Returns: TRUE if updated, FALSE if not found
- */
+ * מעדכנת את הערך של סמל
+ * 
+ * משנה את כתובתו של הסמל
+ * 
+ * פרמטרים:
+ *   table - מצביע לטבלת הסמלים
+ *   name - שם הסמל
+ *   value - הערך החדש
+ * 
+ * מחזירה: TRUE אם הצליח ליצור את הקובץ 
+            FALSE אם נכשל*/
+ 
 int symbol_table_update_value(SymbolTable *table, const char *name, int value);
 
 /*
- * Update all data symbols by adding offset
- * Called after first pass to adjust data addresses
+ * פונ' אשר מעדכנת את כל סמלי הנתונים בהזזה
+ * 
+ * במעבר הראשון הקוד והנתונים מקבלים כתובות בנפרד
+ * הקוד מתחיל מכתובת ההתחלה והנתונים מתחילים מאפס
+ * אך בזיכרון הסופי כלל הרכיבים צריכים להיות ברצף אחד בזיכרון
+ * 
+ * הנתונים צריכים להופיע בזיכרון מיד אחרי שהקוד מסתיים
+ * לכן צריך להוסיף לכל כתובת של סמל נתונים את גודל הקוד
+ * ההזזה שמתווספת היא המרחק בין תחילת הזיכרון לסוף הקוד
+ * 
+ * הפונקציה עוברת על כל הסמלים בטבלה
+ * לכל סמל שמסומן כנתונים היא מוסיפה את ההזזה לערך שלו
+ * כך כל הנתונים מוזזים להתחיל מהמיקום הנכון אחרי הקוד
+ * 
+ * הפונקציה נקראת בסוף המעבר הראשון אחרי שסיימנו לעבור על כל הקובץ
+ * 
+ * פרמטרים:
+ *   table - מצביע לטבלת הסמלים
+ *   offset - גודל הקוד להוספה לסמלי נתונים
  */
 void symbol_table_update_data_symbols(SymbolTable *table, int offset);
 
 /*
- * Check if a symbol has a specific attribute
- * Returns: TRUE if symbol has attribute, FALSE otherwise
- */
+ * בודקת אם לסמל יש תכונה מסוימת
+ * 
+ *לבדיקה AND משתמשת באופרטור  
+ * פרמטרים:
+ *   symbol - מצביע לסמל
+ *   attribute - התכונה לבדיקה
+ * 
+ * מחזירה: TRUE אם הצליח ליצור את הקובץ 
+            FALSE אם נכשל*/
+ 
 int symbol_has_attribute(const Symbol *symbol, SymbolAttribute attribute);
 
 /*
- * Print symbol table (for debugging)
+ * פונ' אשר מדפיסה את כל טבלת הסמלים
+ *
+ * מדפיסה כל סמל עם שם הכתובת והתכונות
+ * 
+ * פרמטרים:
+ *   table - מצביע לטבלת הסמלים
  */
 void symbol_table_print(const SymbolTable *table);
 
 /*
- * Free all symbols in the table
+ * משחררת את כל הזיכרון של טבלת הסמלים
+ * 
+ * malloc כל סמל בטבלה הוקצה דינמית עם 
+ * הפונקציה עוברת על כל הסמלים ומשחררת כל אחד
+ * חשוב לקרוא לזה בסוף התכנית ע"מ למנוע זליגות זיכרון
+ * 
+ * פרמטרים:
+ *   table - מצביע לטבלת הסמלים
  */
 void symbol_table_free(SymbolTable *table);
 
-#endif /* SYMBOL_TABLE_H */
+#endif

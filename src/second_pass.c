@@ -296,10 +296,10 @@ static void handle_instruction_encoding(const char *operation_name, const char *
               /* האופרנד הוא ערך מיידי */  
             } else if (destination_addressing == MODE_IMMEDIATE) 
             {
-                /* מוריד את סימן ה-# ומפענח את המספר *
+                /* מוריד את סימן ה-# ומפענח את המספר */
                 parse_integer(destination_operand + 1, &parsed_value);
                 
-                /* מקודד את המספר לפורמט של 12 ביט */
+            /* מקודד את המספר בפורמט 12 ביט */
                 memory_image_pointer->code[instruction_counter].word = encode_immediate(parsed_value);
                 
                 /* מסמן שמדובר בערך מוחלט שלא צריך שינוי */
@@ -465,10 +465,11 @@ bool execute_second_pass(const char *filename, SymbolTable *symbols, MemoryImage
     /* שומר את רשימת ההפניות החיצוניות */
     externals_list_pointer->head = externals_linked_list_head;
 
-    /* בודק אם היו שגיאות*/
+    /* בודק אם במהלך המעבר השני היו שגיאות
+    במידה וכן מתעדכן המשתנה אשר מסמל דגל בדיקה לשגיאות*/
     if (error_flag) {
         found_error = TRUE;
     }
-    /*מאפשר לפונקציה הקוראת לדעת אם להמשיך או לעצור*/
+    /*אם היו שגיאות תחזיר שהמעבר נכשל אחרת תחזיר שהכל תקין*/
     return found_error ? FALSE : TRUE;
 }

@@ -35,7 +35,6 @@ int main(int argc, char *argv[]) {
     int i;
     int errors_count = 0;
     int successful_count;
-    int temp;
     
     /* בודק שהמשתמש נתן לפחות קובץ אחד */
     if (argc < 2) 
@@ -84,7 +83,6 @@ int process_single_assembly_file(const char *filename) {
     char source_file_name[256];
     char after_macro_file_name[256];
     int stage_result;
-    int temp_var;
     SymbolTable symbol_table;
     MemoryImage memory;
     ExternalList ext_list;

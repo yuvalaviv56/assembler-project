@@ -6,7 +6,7 @@ TEST_SYMBOL = test_symbol_table
 TEST_PARSER = test_parser
 
 # Source files
-SRCS = src/main.c \
+SRCS = src/assembler.c \
        src/string_utils.c \
        src/errors.c \
        src/macro.c \
