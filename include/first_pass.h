@@ -1,7 +1,8 @@
 /*
  * first_pass.h
- * First pass of the assembler
+ * Function declarations for the first pass of the assembler
  */
+
 
 #ifndef FIRST_PASS_H
 #define FIRST_PASS_H
@@ -10,96 +11,67 @@
 #include "symbol_table.h"
 
 /*
- * Perform first pass on assembly file
- * Builds symbol table and encodes basic instruction structure
- * 
- * Parameters:
- *   filename - Input .am filename
- *   symbol_table - Symbol table to populate
- *   memory - Memory image to populate
- * 
- * Returns: SUCCESS or ERROR
+ * The equvilant to the "main" function of the first pass - reads the .am file, builds the symbol table and encodes instruction first words into the code image
+ * Input: path to .am file, symbol table, memory image
+ * Output: SUCCESS if no errors found, ERROR if any error occurured during the first pass
  */
 int first_pass(const char *filename, SymbolTable *symbol_table, MemoryImage *memory);
 
 /*
- * Process a directive line (.data, .string, .entry, .extern)
- * 
- * Parameters:
- *   directive - Directive name
- *   params - Directive parameters
- *   label - Label (if present, can be NULL)
- *   line_num - Line number (for error reporting)
- *   symbol_table - Symbol table
- *   memory - Memory image
- * 
- * Returns: SUCCESS or ERROR
+ * Routes a directive line to the appropriate handler based on its type
+ * Input: directive name, parameters, label, line number (for error reporting), symbol table, memory image
+ * Output: SUCCESS if directive processed properly, ERROR if invalid input or processing failed
  */
 int process_directive(const char *directive, const char *params, const char *label,
                       int line_num, SymbolTable *symbol_table, MemoryImage *memory);
 
 /*
- * Process an instruction line
- * 
- * Parameters:
- *   operation - Operation name
- *   operands - Operands string
- *   label - Label (if present, can be NULL)
- *   line_num - Line number (for error reporting)
- *   symbol_table - Symbol table
- *   memory - Memory image
- * 
- * Returns: SUCCESS or ERROR
+ * handles an instruction line by validating operands, encoding the first word and advancing the IC
+ * Input: operation name, operands string, label, line number (for error reporting), symbol table, memory image
+ * Output: SUCCESS if instruction processed properly, ERROR if invalid operands or memory overflow
  */
 int process_instruction(const char *operation, const char *operands, const char *label,
                         int line_num, SymbolTable *symbol_table, MemoryImage *memory);
 
 /*
- * Process .data directive
- * Encodes integers to data image
+ * handles a .data directive by storing the accompanying int values in the data image
+ * Input: parameter string (comma-separated integers), line number (for error reporting), memory image
+ * Output: SUCCESS if all values stored, ERROR if invalid input or memory overflow
  */
 int process_data_directive(const char *params, int line_num, MemoryImage *memory);
 
 /*
- * Process .string directive
- * Encodes string to data image (ASCII + null terminator)
+ * handles a .string directive by storing the ASCII codes of each character in the data image
+ * Input: parameter string (quoted string), line number (for error reporting), memory image
+ * Output: SUCCESS if string stored, ERROR if missing quotes or memory overflow
  */
 int process_string_directive(const char *params, int line_num, MemoryImage *memory);
 
 /*
- * Process .entry directive
- * Marks symbol for entry (processed in second pass)
+ * Validates a .entry directive - actual handling is done during the second pass
+ * Input: parameter string (label name), line number (for error reporting)
+ * Output: SUCCESS if parameter exists, ERROR if empty
  */
 int process_entry_directive(const char *params, int line_num);
 
 /*
- * Process .extern directive
- * Adds external symbol to symbol table
+ * handles a .extern directive by adding the external symbol to the symbol table
+ * Input: parameter string (label name), line number (for error reporting), symbol table
+ * Output: SUCCESS if symbol added, ERROR if invalid name or duplicate
  */
 int process_extern_directive(const char *params, int line_num, SymbolTable *symbol_table);
 
 /*
- * Get operation information (opcode, funct, operand count)
- * 
- * Parameters:
- *   operation - Operation name
- *   opcode - Output: operation code
- *   funct - Output: function code
- *   num_operands - Output: number of operands (0, 1, or 2)
- * 
- * Returns: TRUE if valid operation, FALSE otherwise
+ * Looks up an operation by name and retrieves the details of its properties
+ * Input: operation name string, pointers to store the opcode, funct, and operand count values (any can be NULL)
+ * Output: TRUE if operation found, FALSE otherwise
  */
 int get_operation_info(const char *operation, int *opcode, int *funct, int *num_operands);
 
 /*
- * Calculate instruction length in words
- * 
- * Parameters:
- *   operation - Operation name
- *   source - Source operand (can be NULL)
- *   dest - Destination operand (can be NULL)
- * 
- * Returns: Number of memory words needed
+ * Calculates the number of memory words an instruction occupies
+ * Input: operation name, source operand string, destination operand string
+ * Output: number of words (1 for no operands, and up to 3 for two operands)
  */
 int calculate_instruction_length(const char *operation, const char *source, const char *dest);
 

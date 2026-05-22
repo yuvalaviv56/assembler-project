@@ -1,6 +1,6 @@
 /*
  * parser.h
- * Assembly line parsing functions
+ * Declaration of assembly line parsing functions
  */
 
 #ifndef PARSER_H
@@ -9,104 +9,79 @@
 #include "structures.h"
 
 /*
- * Parse a line and determine its type
- * Parameters:
- *   line - Line to parse
- * Returns: LINE_EMPTY, LINE_DIRECTIVE, LINE_INSTRUCTION, or LINE_ERROR
+ * Determines the type of an assembly source line
+ * Input: line string
+ * Output: one of the options: LINE_EMPTY, LINE_DIRECTIVE, LINE_INSTRUCTION, or LINE_ERROR
  */
 LineType parse_line_type(const char *line);
 
 /*
- * Extract label from line (if exists)
- * Parameters:
- *   line - Line to parse
- *   label - Buffer to store label (output)
- *   max_len - Maximum label length
- * Returns: Pointer to rest of line after label, or original line if no label
+ * Extracts the label from current line if one exists
+ * Input: line string, buffer to store label, max label length
+ * Output: pointer to the point in the line directly after the label, or original line if no label exists
  */
 char* parse_label(char *line, char *label, int max_len);
 
 /*
- * Parse a directive line (.data, .string, .entry, .extern)
- * Parameters:
- *   line - Line to parse (after label if any)
- *   directive - Buffer to store directive name (output)
- *   params - Buffer to store parameters (output)
- *   max_len - Maximum buffer length
- * Returns: TRUE if successfully parsed, FALSE otherwise
+ * Extracts the directive name and parameters from a directive line
+ * Input: line string, buffer for directive name, buffer for parameters, max length for either buffer
+ * Output: TRUE on success, FALSE if any input is NULL
  */
 int parse_directive(char *line, char *directive, char *params, int max_len);
 
 /*
- * Parse an instruction line (operation + operands)
- * Parameters:
- *   line - Line to parse (after label if any)
- *   operation - Buffer to store operation name (output)
- *   operands - Buffer to store operands string (output)
- *   max_len - Maximum buffer length
- * Returns: TRUE if successfully parsed, FALSE otherwise
+ * Extracts the operation name and operands from an instruction line
+ * Input: line string, buffer for operation name, buffer for operands, max length for either buffer
+ * Output: TRUE on success, FALSE if any input is NULL
  */
 int parse_instruction(char *line, char *operation, char *operands, int max_len);
 
 /*
- * Parse operands string and extract individual operands
- * Parameters:
- *   operands_str - String containing operands (e.g., "#5, r1")
- *   source - Buffer for source operand (output, can be NULL if none)
- *   dest - Buffer for destination operand (output, can be NULL if none)
- *   max_len - Maximum buffer length
- * Returns: Number of operands found (0, 1, or 2)
+ * Splits an operands string into source and destination operands
+ * Input: operands string, buffer for source operand, buffer for destination operand, max length for either buffer
+ * Output: number of operands found (0, 1, or 2)
  */
 int parse_operands(char *operands_str, char *source, char *dest, int max_len);
 
 /*
- * Identify addressing mode of an operand
- * Parameters:
- *   operand - Operand string (e.g., "#5", "r1", "LABEL", "%LOOP")
- * Returns: AddressingMode (MODE_IMMEDIATE, MODE_DIRECT, MODE_RELATIVE, MODE_REGISTER)
+ * Identifies the addressing mode of an operand string
+ * Input: operand string
+ * Output: one of the options: MODE_IMMEDIATE, MODE_DIRECT, MODE_RELATIVE, or MODE_REGISTER
  */
 AddressingMode identify_addressing_mode(const char *operand);
 
 /*
- * Parse an operand and extract its components
- * Parameters:
- *   operand_str - Operand string
- *   operand - Operand structure to fill (output)
- * Returns: TRUE if successfully parsed, FALSE otherwise
+ * Breaks down a single operand string and fills an Operand struct with the corresponding data
+ * Input: operand string, pointer to Operand struct to fill
+ * Output: TRUE on success, FALSE if input is NULL or parsing fails
  */
 int parse_operand(const char *operand_str, Operand *operand);
 
 /*
- * Check if string is a valid operation name
- * Parameters:
- *   operation - Operation name to check
- * Returns: TRUE if valid operation, FALSE otherwise
+ * Make sure a string is a valid assembly operation name (error detection)
+ * Input: operation name string
+ * Output: TRUE if valid, FALSE otherwise
  */
 int is_valid_operation(const char *operation);
 
 /*
- * Check if string is a valid directive
- * Parameters:
- *   directive - Directive name to check
- * Returns: TRUE if valid directive, FALSE otherwise
+ * Checks if a string is a valid directive name (error detection)
+ * Input: directive name string
+ * Output: TRUE if valid, FALSE otherwise
  */
 int is_valid_directive(const char *directive);
 
 /*
- * Parse integer from string (handles positive/negative)
- * Parameters:
- *   str - String to parse
- *   value - Pointer to store result (output)
- * Returns: TRUE if valid integer, FALSE otherwise
+ * Converts a string representation to a decimal integer
+ * Input: string to parse, pointer to int to store result
+ * Output: TRUE if valid integer, FALSE if invalid or NULL input
  */
 int parse_integer(const char *str, int *value);
 
 /*
- * Parse register name (r0-r7)
- * Parameters:
- *   str - String to parse (e.g., "r1")
- *   reg_num - Pointer to store register number (output)
- * Returns: TRUE if valid register, FALSE otherwise
+ * Validates a register operand and extracts its number
+ * Input: register string, pointer to int to store register number
+ * Output: TRUE if valid register (r0-r7), FALSE otherwise
  */
 int parse_register(const char *str, int *reg_num);
 

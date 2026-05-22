@@ -6,30 +6,30 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-/* Memory and size constants */
+/* Memory and size */
 #define MEMORY_SIZE 4096        /* Total memory size in words */
-#define WORD_SIZE 12            /* Number of bits per memory word */
+#define WORD_SIZE 12            /* single word size in bits */
 #define MAX_LINE_LENGTH 81      /* Maximum line length (80 + '\n') */
 #define MAX_LABEL_LENGTH 31     /* Maximum label name length */
 #define INITIAL_IC 100          /* Starting address for code */
 #define INITIAL_DC 0            /* Starting address for data */
 
 /* File extensions */
-#define EXT_SOURCE ".as"        /* Source file extension */
+#define EXT_SOURCE ".as"        /* Source file */
 #define EXT_MACRO ".am"         /* After macro expansion */
 #define EXT_OBJECT ".ob"        /* Object file */
 #define EXT_ENTRIES ".ent"      /* Entries file */
 #define EXT_EXTERNALS ".ext"    /* Externals file */
 
 /* Registers */
-#define NUM_REGISTERS 8         /* r0 through r7 */
-#define REGISTER_PREFIX 'r'
+#define NUM_REGISTERS 8         /* number of registers (r0-r7) */
+#define REGISTER_PREFIX 'r'     /* First character of all register names (r0-r7) */
 
 /* Addressing modes */
-#define ADDR_IMMEDIATE 0        /* #N */
-#define ADDR_DIRECT 1           /* LABEL */
-#define ADDR_RELATIVE 2         /* %LABEL (only for jumps) */
-#define ADDR_REGISTER 3         /* rN */
+#define ADDR_IMMEDIATE 0        /* #N - for immediate values */
+#define ADDR_DIRECT 1           /* LABEL - for direct addressing */
+#define ADDR_RELATIVE 2         /* %LABEL - for relative addressing */
+#define ADDR_REGISTER 3         /* rN - for register addressing */
 
 /* Special characters */
 #define IMMEDIATE_PREFIX '#'
@@ -41,10 +41,10 @@
 #define DIRECTIVE_PREFIX '.'
 
 /* Directives */
-#define DIR_DATA ".data"
-#define DIR_STRING ".string"
-#define DIR_ENTRY ".entry"
-#define DIR_EXTERN ".extern"
+#define DIR_DATA ".data" /* Store int values in the data image */
+#define DIR_STRING ".string"  /* Store a string as ASCII codes in the data image */
+#define DIR_ENTRY ".entry" /* Export a label so other files can reference it */
+#define DIR_EXTERN ".extern" /* Declare a label that is defined in another file */
 
 /* Macro keywords */
 #define MACRO_START "mcro"
@@ -80,10 +80,10 @@
 #define FUNCT_BNE 11
 #define FUNCT_JSR 12
 
-/* A/R/E encoding */
-#define ARE_ABSOLUTE 0
-#define ARE_EXTERNAL 1
-#define ARE_RELOCATABLE 2
+/* A/R/E encoding (instructions for linker/loader) */
+#define ARE_ABSOLUTE 0 /* Fixed value - load-address independent */
+#define ARE_EXTERNAL 1 /* symbol defined in another file - filled in by the linker */
+#define ARE_RELOCATABLE 2 /*symbol in this file - may need adjustment by the loader */
 
 /* Error and success codes */
 #define SUCCESS 0

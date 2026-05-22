@@ -12,21 +12,26 @@
 #include "constants.h"
 #include "globals.h"
 
-/* Parse line type */
+/*
+ * Determines the type of an assembly source line
+ * Input: line string
+ * Output: one of the options: LINE_EMPTY, LINE_DIRECTIVE, LINE_INSTRUCTION, or LINE_ERROR
+ */
 LineType parse_line_type(const char *line) {
-    const char *p;
-    char first_word[MAX_LABEL_LENGTH + 1];
+    const char *p;      /* pointer for going through the line's content */
+    char first_word[MAX_LABEL_LENGTH + 1]; /* extract first word after label (if any) */
     
+    /* Make sure current line has content (error detection) */
     if (line == NULL) {
         return LINE_ERROR;
     }
     
-    /* Check if empty or comment */
+    /* Check if current line is empty or comment (no need for parsing)*/
     if (is_empty_or_comment(line)) {
         return LINE_EMPTY;
     }
     
-    /* Skip label if present */
+    /* Skip label if there is one */
     p = strchr(line, LABEL_END);
     if (p != NULL) {
         p++; /* Skip the ':' */
@@ -48,19 +53,25 @@ LineType parse_line_type(const char *line) {
         return LINE_INSTRUCTION;
     }
     
+    /* return error in case no line type was assigned successfully */
     return LINE_ERROR;
 }
 
-/* Extract label from line */
+/*
+ * Extracts the label from current line if one exists
+ * Input: line string, buffer to store label, max label length
+ * Output: pointer to the point in the line directly after the label, or original line if no label exists
+ */
 char* parse_label(char *line, char *label, int max_len) {
-    char *colon_pos;
-    int label_len;
+    char *colon_pos;    /* pointer to the ':' character if exists */
+    int label_len;      /* length of the label string */
     
+    /*Make sure the current line has content and the label buffer is valid*/
     if (line == NULL || label == NULL) {
         return line;
     }
     
-    /* Initialize label as empty */
+    /* Initialize label buffer as empty */
     label[0] = '\0';
     
     /* Skip leading whitespace */
@@ -75,12 +86,12 @@ char* parse_label(char *line, char *label, int max_len) {
     /* Calculate label length */
     label_len = colon_pos - line;
     
-    /* Check if label is too long */
+    /* Make sure label length is valid */
     if (label_len >= max_len) {
         return line;
     }
     
-    /* Extract label */
+    /* Extract label to buffer */
     strncpy(label, line, label_len);
     label[label_len] = '\0';
     
@@ -91,25 +102,29 @@ char* parse_label(char *line, char *label, int max_len) {
     return skip_whitespace(colon_pos + 1);
 }
 
-/* Parse directive line */
+/*
+ * Extracts the directive name and parameters from a directive line
+ * Input: line string, buffer for directive name, buffer for parameters, max length for either buffer
+ * Output: TRUE on success, FALSE if any input is NULL
+ */
 int parse_directive(char *line, char *directive, char *params, int max_len) {
-    char *p;
+    char *p; /* pointer for going through the line's content */
     
     if (line == NULL || directive == NULL || params == NULL) {
         return FALSE;
     }
     
-    /* Initialize outputs */
+    /* Initialize output buffers as an empty string */
     directive[0] = '\0';
     params[0] = '\0';
     
     /* Skip whitespace */
     p = skip_whitespace(line);
     
-    /* Extract directive */
+    /* Extract directive to directive buffer */
     p = extract_word(p, directive, max_len);
     
-    /* Get parameters (rest of line) */
+    /* Get parameters (rest of line) and store in params buffer */
     p = skip_whitespace(p);
     safe_strcpy(params, p, max_len);
     trim(params);
@@ -117,25 +132,29 @@ int parse_directive(char *line, char *directive, char *params, int max_len) {
     return TRUE;
 }
 
-/* Parse instruction line */
+/*
+ * Extracts the operation name and operands from an instruction line
+ * Input: line string, buffer for operation name, buffer for operands, max length for either buffer
+ * Output: TRUE on success, FALSE if any input is NULL
+ */
 int parse_instruction(char *line, char *operation, char *operands, int max_len) {
-    char *p;
+    char *p;    /* pointer for going through the line's content */
     
     if (line == NULL || operation == NULL || operands == NULL) {
         return FALSE;
     }
     
-    /* Initialize outputs */
+     /* Initialize output buffers as an empty string */
     operation[0] = '\0';
     operands[0] = '\0';
     
     /* Skip whitespace */
     p = skip_whitespace(line);
     
-    /* Extract operation */
+    /* Extract operation to operation buffer */
     p = extract_word(p, operation, max_len);
     
-    /* Get operands (rest of line) */
+    /* Get operands (rest of line) and store in operands buffer */
     p = skip_whitespace(p);
     safe_strcpy(operands, p, max_len);
     trim(operands);
@@ -143,7 +162,11 @@ int parse_instruction(char *line, char *operation, char *operands, int max_len) 
     return TRUE;
 }
 
-/* Parse operands string */
+/*
+ * Splits an operands string into source and destination operands
+ * Input: operands string, buffer for source operand, buffer for destination operand, max length for either buffer
+ * Output: number of operands found (0, 1, or 2)
+ */
 int parse_operands(char *operands_str, char *source, char *dest, int max_len) {
     char *comma;
     
@@ -151,14 +174,14 @@ int parse_operands(char *operands_str, char *source, char *dest, int max_len) {
         return 0;
     }
     
-    /* Initialize outputs */
+    /* make sure the buffers provided are valid and if so initialize them as empty strings */
     if (source != NULL) source[0] = '\0';
     if (dest != NULL) dest[0] = '\0';
     
-    /* Trim whitespace */
+    /* Trim whitespaces from operand's input string before processing */
     trim(operands_str);
     
-    /* If empty, no operands */
+    /* If input string is empty there are no operands */
     if (*operands_str == '\0') {
         return 0;
     }
@@ -178,27 +201,32 @@ int parse_operands(char *operands_str, char *source, char *dest, int max_len) {
     /* Two operands */
     if (source != NULL) {
         /* Extract source (before comma) */
-        *comma = '\0';
-        safe_strcpy(source, operands_str, max_len);
+        *comma = '\0';      /* Temporarily split source string up to comma */
+        safe_strcpy(source, operands_str, max_len);     /* copy source operand to source buffer */
         trim(source);
         *comma = OPERAND_SEPARATOR; /* Restore comma */
     }
     
     if (dest != NULL) {
         /* Extract destination (after comma) */
-        safe_strcpy(dest, comma + 1, max_len);
+        safe_strcpy(dest, comma + 1, max_len); /* copy destination operand to destination buffer */
         trim(dest);
     }
     
     return 2;
 }
 
-/* Identify addressing mode */
+/*
+ * Identifies the addressing mode of an operand string
+ * Input: operand string
+ * Output: one of the options: MODE_IMMEDIATE, MODE_DIRECT, MODE_RELATIVE, or MODE_REGISTER
+ */
 AddressingMode identify_addressing_mode(const char *operand) {
-    int reg_num;
+    int reg_num;    /* required by parse_register to validate register operands */
     
+    /* Default or error case */
     if (operand == NULL || *operand == '\0') {
-        return MODE_IMMEDIATE; /* Default/error case */
+        return MODE_IMMEDIATE;
     }
     
     /* Immediate: starts with # */
@@ -220,22 +248,28 @@ AddressingMode identify_addressing_mode(const char *operand) {
     return MODE_DIRECT;
 }
 
-/* Parse operand */
+/*
+ * Breaks down a single operand string and fills an Operand struct with the corresponding data
+ * Input: operand string, pointer to Operand struct to fill
+ * Output: TRUE on success, FALSE if input is NULL or parsing fails
+ */
 int parse_operand(const char *operand_str, Operand *operand) {
-    int value;
+    int value;      /* numeric value (immediate or register number) */
+
     
     if (operand_str == NULL || operand == NULL) {
         return FALSE;
     }
     
-    /* Initialize */
+    /* Initialize properties */
     operand->mode = identify_addressing_mode(operand_str);
     operand->value = 0;
     operand->symbol[0] = '\0';
     
+    /*process operand based on addressing mode */
     switch (operand->mode) {
         case MODE_IMMEDIATE:
-            /* Parse immediate value (skip #) */
+            /* immediate mode (skip '#' char and store the int value) */
             if (!parse_integer(operand_str + 1, &value)) {
                 return FALSE;
             }
@@ -243,7 +277,7 @@ int parse_operand(const char *operand_str, Operand *operand) {
             break;
             
         case MODE_REGISTER:
-            /* Parse register number */
+            /* register mode (extract and store the register number) */
             if (!parse_register(operand_str, &value)) {
                 return FALSE;
             }
@@ -251,12 +285,12 @@ int parse_operand(const char *operand_str, Operand *operand) {
             break;
             
         case MODE_RELATIVE:
-            /* Store symbol (skip %) */
+            /* relative mode (skip '%' char and store the label name) */
             safe_strcpy(operand->symbol, operand_str + 1, MAX_LABEL_LENGTH + 1);
             break;
             
         case MODE_DIRECT:
-            /* Store symbol */
+            /* direct mode (store the label name as is) */
             safe_strcpy(operand->symbol, operand_str, MAX_LABEL_LENGTH + 1);
             break;
     }
@@ -264,7 +298,11 @@ int parse_operand(const char *operand_str, Operand *operand) {
     return TRUE;
 }
 
-/* Check if valid operation */
+/*
+ * Make sure a string is a valid assembly operation name (error detection)
+ * Input: operation name string
+ * Output: TRUE if valid, FALSE otherwise
+ */
 int is_valid_operation(const char *operation) {
     static const char *operations[] = {
         "mov", "cmp", "add", "sub", "lea",
@@ -289,7 +327,11 @@ int is_valid_operation(const char *operation) {
     return FALSE;
 }
 
-/* Check if valid directive */
+/*
+ * Checks if a string is a valid directive name (error detection)
+ * Input: directive name string
+ * Output: TRUE if valid, FALSE otherwise
+ */
 int is_valid_directive(const char *directive) {
     if (directive == NULL) {
         return FALSE;
@@ -305,10 +347,14 @@ int is_valid_directive(const char *directive) {
     return FALSE;
 }
 
-/* Parse integer */
+/*
+ * Converts a string representation to a decimal integer
+ * Input: string to parse, pointer to int to store result
+ * Output: TRUE if valid integer, FALSE if invalid or NULL input
+ */
 int parse_integer(const char *str, int *value) {
-    char *endptr;
-    long result;
+    char *endptr;   /* points to first char not consumed by strtol - used to make sure the string holds a valid int (error detection) */
+    long result;    /* temporarily stores the converted long value before casting to int */
     
     if (str == NULL || value == NULL || *str == '\0') {
         return FALSE;
@@ -319,7 +365,7 @@ int parse_integer(const char *str, int *value) {
         str++;
     }
     
-    /* Parse integer */
+    /* convert string to long integer in base 10 */
     result = strtol(str, &endptr, 10);
     
     /* Check if entire string was consumed (except trailing whitespace) */
@@ -328,14 +374,18 @@ int parse_integer(const char *str, int *value) {
     }
     
     if (*endptr != '\0' && *endptr != '\n' && *endptr != '\r') {
-        return FALSE; /* Invalid characters */
+        return FALSE; /* Invalid characters in string (error detection) */
     }
     
     *value = (int)result;
     return TRUE;
 }
 
-/* Parse register */
+/*
+ * Validates a register operand and extracts its number
+ * Input: register string, pointer to int to store register number
+ * Output: TRUE if valid register (r0-r7), FALSE otherwise
+ */
 int parse_register(const char *str, int *reg_num) {
     if (str == NULL || reg_num == NULL) {
         return FALSE;
