@@ -467,6 +467,7 @@ int first_pass(const char *filename, SymbolTable *symbol_table, MemoryImage *mem
     int line_num = 0;
     int error_found = FALSE;
     LineType line_type;
+    char *label_ptr = NULL; /* label pointer for parse_directive and parse_instruction to check for label existence */
 
     file = fopen(filename, "r");
     /* make sure the file was opened successfully (error detection)*/
@@ -504,12 +505,17 @@ int first_pass(const char *filename, SymbolTable *symbol_table, MemoryImage *mem
             continue;
         }
 
+        /* update label pointer to note a valid label exists */
+        label_ptr = NULL; /* reset last line's changes */
+        if (label[0] != '\0') {
+            label_ptr = label;
+        }
+
         /* route line to appropriate handler based on its type */
         if (line_type == LINE_DIRECTIVE) {
             /* handle directive line */
             if (parse_directive(line_after_label, directive, params, MAX_LINE_LENGTH)) {
-                if (process_directive(directive, params, label[0] != '\0' ? label : NULL,
-                                     line_num, symbol_table, memory) == ERROR) {
+                if (process_directive(directive, params, label_ptr, line_num, symbol_table, memory) == ERROR) {
                     error_found = TRUE;
                 }
             } else {
@@ -521,8 +527,7 @@ int first_pass(const char *filename, SymbolTable *symbol_table, MemoryImage *mem
         else if (line_type == LINE_INSTRUCTION) {
             /* handle instruction line */
             if (parse_instruction(line_after_label, operation, operands, MAX_LINE_LENGTH)) {
-                if (process_instruction(operation, operands, label[0] != '\0' ? label : NULL,
-                                       line_num, symbol_table, memory) == ERROR) {
+                if (process_instruction(operation, operands, label_ptr, line_num, symbol_table, memory) == ERROR) {
                     error_found = TRUE;
                 }
             } else {
