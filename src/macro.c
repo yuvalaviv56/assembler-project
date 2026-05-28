@@ -43,6 +43,9 @@ int expand_macros(const char *source, const char *output) {
     MacroNode *found_macro;     /* result of macro lookup for current line (pointer to macro or NULL)*/
     int i;      /* counter for macro expansion loop */
     char *line_ptr;     /* pointer for moving through the current line */
+    char *rest_ptr;     /* pointer for scanning rest of line after first word */
+    char next_word[MAX_LABEL_LENGTH + 1]; /* buffer for scanning words after the first */
+    int mcro_in_middle; /* flag - true if mcro keyword found after other text */
     
     /* open source file for reading */
     in = fopen(source, "r");
@@ -78,6 +81,24 @@ int expand_macros(const char *source, const char *output) {
         /* extract first word of current line to identify line type */
         line_ptr = skip_whitespace(line);
         extract_word(line_ptr, word, MAX_LABEL_LENGTH + 1);
+
+        /* check if mcro or mcroend appears after other text on the same line (error detection) */
+        if (strcmp(word, MACRO_START) != 0 && strcmp(word, MACRO_END) != 0) {
+            mcro_in_middle = FALSE;
+            rest_ptr = skip_whitespace(line_ptr + strlen(word));
+            while (*rest_ptr != '\0' && *rest_ptr != '\n') {
+                extract_word(rest_ptr, next_word, MAX_LABEL_LENGTH + 1);
+                if (strlen(next_word) == 0) break;
+                if (strcmp(next_word, MACRO_START) == 0 || strcmp(next_word, MACRO_END) == 0) {
+                    print_error(line_num, ERR_NONE, "text before mcro keyword is not allowed");
+                    error_found = TRUE;
+                    mcro_in_middle = TRUE;
+                    break;
+                }
+                rest_ptr = skip_whitespace(rest_ptr + strlen(next_word));
+            }
+            if (mcro_in_middle) continue;
+        }
         
         /* Check for macro definition start */
         if (strcmp(word, MACRO_START) == 0) {
@@ -120,7 +141,16 @@ int expand_macros(const char *source, const char *output) {
         
         /* Check for macro definition end */
         if (strcmp(word, MACRO_END) == 0) {
-             /* mcroend found while not defining a macro (error detection) */
+            /* check for extraneous text after mcroend (error detection) */
+            rest_ptr = skip_whitespace(line_ptr + strlen(word));
+            if (*rest_ptr != '\0' && *rest_ptr != '\n') {
+                print_error(line_num, ERR_NONE, "text after mcroend keyword is not allowed");
+                error_found = TRUE;
+                in_macro_definition = FALSE;
+                current_macro = NULL;
+                continue;
+            }
+            /* mcroend found while not defining a macro (error detection) */
             if (!in_macro_definition) {
                 print_error(line_num, ERR_NONE, "mcroend without mcro");
                 error_found = TRUE;
@@ -169,7 +199,11 @@ int expand_macros(const char *source, const char *output) {
     fclose(out);
     free_macros(macro_table);
     
-    return error_found ? ERROR : SUCCESS;
+    if (error_found) {
+        return ERROR;
+    }
+    
+    return SUCCESS;
 }
 
 /*
