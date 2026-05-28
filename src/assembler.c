@@ -9,7 +9,6 @@
  * 2)מעבר ראשון- בונה טבלת סמלים ומחשבת גודל כל פקודה
  * 3) מעבר שני- מילוי הכתובות הסופיות של הסמלים וקידוד הפקודות
  * 4)יצירת פלט- נוצרים הקבצים הסופיים ob,ent,ext
- * 
  */
 
 #include <stdio.h>
@@ -72,7 +71,11 @@ int main(int argc, char *argv[]) {
     printf("Failed: %d\n", errors_count);
     
     /* החזרת קוד שגיאה למערכת הפעלה במידה והיו שגיאות */
-    return (errors_count > 0) ? ERROR : SUCCESS;
+    if (errors_count > 0) 
+{
+    return ERROR;
+}
+return SUCCESS;
 }
 
 /*

@@ -255,7 +255,7 @@ static void handle_instruction_encoding(const char *operation_name, const char *
             else if (source_addressing == MODE_RELATIVE) {
                 encode_relative_address(source_operand, line_number);
             } 
-            /*מדובר במספר קבוע ,ערך קבוע שלא משתנה ואינו תלוי בכתובת*/
+            /*מדובר במספר קבוע, ערך קבוע שלא משתנה ואינו תלוי בכתובת*/
             else if (source_addressing == MODE_IMMEDIATE) 
             {
                 /*מוריד את סימן הסולמית ומפענח את המספר*/
@@ -280,7 +280,6 @@ static void handle_instruction_encoding(const char *operation_name, const char *
                 
                 /* מסמן שמדובר בערך מוחלט שלא צריך שינוי */
                 memory_image_pointer->code[instruction_counter].are = ARE_ABSOLUTE;
-                
                 /* מתקדם למילה הבאה בזיכרון */
                 instruction_counter = instruction_counter + 1;
             }
@@ -305,8 +304,7 @@ static void handle_instruction_encoding(const char *operation_name, const char *
                 /* מסמן שמדובר בערך מוחלט שלא צריך שינוי */
                 memory_image_pointer->code[instruction_counter].are = ARE_ABSOLUTE;
                 
-                /* מתקדם למילה הבאה בזיכרון */
-                instruction_counter = instruction_counter + 1;
+                instruction_counter++;
 
               /*המקרה האחרון מדובר ברגיסטר
               אם האופרנד לא ישיר/יחסי/מיידי אז הוא בהכרח רגיסטר*/  
@@ -320,8 +318,7 @@ static void handle_instruction_encoding(const char *operation_name, const char *
                 
                 /* מסמן שמדובר בערך מוחלט שלא צריך שינוי */
                 memory_image_pointer->code[instruction_counter].are = ARE_ABSOLUTE;
-                 /* מתקדם למילה הבאה בזיכרון */
-                instruction_counter = instruction_counter + 1;
+                instruction_counter++;
             }
         }
     } 
@@ -349,8 +346,7 @@ static void handle_instruction_encoding(const char *operation_name, const char *
             memory_image_pointer->code[instruction_counter].word = encode_immediate(parsed_value);
             /* מסמן שזה ערך מוחלט שלא משתנה */
             memory_image_pointer->code[instruction_counter].are = ARE_ABSOLUTE;
-            /* מתקדם למילה הבאה */
-            instruction_counter = instruction_counter + 1;
+            instruction_counter++;
 
         /*מדובר ברגיסטר*/
         } else if (destination_addressing == MODE_REGISTER) 
@@ -361,8 +357,7 @@ static void handle_instruction_encoding(const char *operation_name, const char *
             memory_image_pointer->code[instruction_counter].word = encode_register(parsed_value);
             /* מסמן שזה ערך מוחלט שלא משתנה */
             memory_image_pointer->code[instruction_counter].are = ARE_ABSOLUTE;
-            /* מתקדם למילה הבאה */
-            instruction_counter = instruction_counter + 1;
+            instruction_counter++;
         }
     }
 }
@@ -471,5 +466,9 @@ bool execute_second_pass(const char *filename, SymbolTable *symbols, MemoryImage
         found_error = TRUE;
     }
     /*אם היו שגיאות תחזיר שהמעבר נכשל אחרת תחזיר שהכל תקין*/
-    return found_error ? FALSE : TRUE;
+    if (found_error) 
+{
+    return FALSE;
+}
+return TRUE;
 }

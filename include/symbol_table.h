@@ -67,13 +67,13 @@ Symbol* symbol_table_find(SymbolTable *table, const char *name);
  *   attributes - התכונות להוספה
  * 
  * מחזירה: TRUE אם הצליח ליצור את הקובץ 
-            FALSE אם נכשל*/
+            FALSE אם נכשל
+*/
  
 int symbol_table_update_attributes(SymbolTable *table, const char *name, unsigned int attributes);
 
 /*
  * מעדכנת את הערך של סמל
- * 
  * משנה את כתובתו של הסמל
  * 
  * פרמטרים:
@@ -82,12 +82,11 @@ int symbol_table_update_attributes(SymbolTable *table, const char *name, unsigne
  *   value - הערך החדש
  * 
  * מחזירה: TRUE אם הצליח ליצור את הקובץ 
-            FALSE אם נכשל*/
+            FALSE אם נכשל */
  
 int symbol_table_update_value(SymbolTable *table, const char *name, int value);
 
-/*
- * פונ' אשר מעדכנת את כל סמלי הנתונים בהזזה
+/* פונ' אשר מעדכנת את כל סמלי הנתונים בהזזה
  * 
  * במעבר הראשון הקוד והנתונים מקבלים כתובות בנפרד
  * הקוד מתחיל מכתובת ההתחלה והנתונים מתחילים מאפס
@@ -97,7 +96,7 @@ int symbol_table_update_value(SymbolTable *table, const char *name, int value);
  * לכן צריך להוסיף לכל כתובת של סמל נתונים את גודל הקוד
  * ההזזה שמתווספת היא המרחק בין תחילת הזיכרון לסוף הקוד
  * 
- * הפונקציה עוברת על כל הסמלים בטבלה
+ * הפונקציה עוברת על כלל הסמלים בטבלה
  * לכל סמל שמסומן כנתונים היא מוסיפה את ההזזה לערך שלו
  * כך כל הנתונים מוזזים להתחיל מהמיקום הנכון אחרי הקוד
  * 
