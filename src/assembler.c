@@ -72,7 +72,12 @@ int main(int argc, char *argv[]) {
     printf("Failed: %d\n", errors_count);
     
     /* החזרת קוד שגיאה למערכת הפעלה במידה והיו שגיאות */
-    return (errors_count > 0) ? ERROR : SUCCESS;
+    if (errors_count > 0) {
+    return ERROR;
+}
+    return SUCCESS;
+
+
 }
 
 /*
