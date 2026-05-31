@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     }
     
     /* מדפיס כותרת בהתחלה כדי שהמשתמש יראה שהתוכנית התחילה לרוץ */
-    printf("Assembler started. Processing %d file(s)...\n\n", argc - 1);
+    printf("Assembler started. Processing %d file(s)\n\n", argc - 1);
     
     /* לולאה שעוברת על כלל הקבצים שהתקבלו ע"י המשתמש */
     for (i=1; i < argc; i++) 
@@ -103,31 +103,31 @@ int process_single_assembly_file(const char *filename) {
     sprintf(after_macro_file_name, "%s%s", filename, EXT_MACRO);
     
     /* שלב ראשון: פריסת מקרואים */
-    printf("Stage 1: Macro expansion...\n");
+    printf("Stage 1: Macro expansion\n");
     stage_result = expand_macros(source_file_name, after_macro_file_name);
     if(stage_result == ERROR) {
         fprintf(stderr, "Error: Macro expansion failed for %s\n", source_file_name);
         symbol_table_free(&symbol_table);
         return ERROR;
     }
-    printf("  → Generated %s\n", after_macro_file_name);
+    printf("  Generated %s\n", after_macro_file_name);
     
     /* שלב שני: מעבר ראשון שבונה את טבלת הסמלים */
-    printf("Stage 2: First pass...\n");
+    printf("Stage 2: First pass\n");
     stage_result = first_pass(after_macro_file_name, &symbol_table, &memory);
     if (stage_result == ERROR){
         fprintf(stderr, "Error: First pass failed for %s\n", after_macro_file_name);
         symbol_table_free(&symbol_table);
         return ERROR;
     }
-    printf("  → Symbol table built\n");
-    printf("  → IC = %d, DC = %d\n", memory.IC, memory.DC);
+    printf("  Symbol table built\n");
+    printf("  IC = %d, DC = %d\n", memory.IC, memory.DC);
     
     /* הדפסת טבלת הסמלים  */
     symbol_table_print(&symbol_table);
     
     /* שלב שלישי: מעבר שני מילוי כתובות וקידוד */
-    printf("Stage 3: Second pass...\n");
+    printf("Stage 3: Second pass\n");
     stage_result = execute_second_pass(after_macro_file_name, &symbol_table, &memory, &ext_list);
     if(stage_result == FALSE) 
     {
@@ -135,14 +135,14 @@ int process_single_assembly_file(const char *filename) {
         symbol_table_free(&symbol_table);
         return ERROR;
     }
-    printf("  → Encoding completed\n");
+    printf("  Encoding completed\n");
     
     /* שלב רביעי: יצירת כלל קבצי הפלט הסופיים */
-    printf("Stage 4: Generating output files...\n");
+    printf("Stage 4: Generating output files\n");
     create_object_file(filename, &memory) ;
     create_entries_file(filename, &symbol_table) ;
     create_externals_file(filename, &ext_list);
-    printf ("  → Output files generated\n");
+    printf ("  Output files generated\n");
     
     /* שחרור הזיכרון שהקצינו ע"מ למנוע זליגות זיכרון */
     symbol_table_free(&symbol_table);
