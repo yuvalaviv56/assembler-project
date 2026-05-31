@@ -1,6 +1,6 @@
 /*
  * macro.c
- * Handles macro expansion (pre-assembler stage)
+ * handles macro expansion (pre-assembler stage)
  */
 
 #include <stdio.h>
@@ -21,15 +21,15 @@ typedef struct MacroNode {
     struct MacroNode *next;  /* pointer to next macro in the table */
 } MacroNode;
 
-/* Function prototypes */
+/* function prototypes */
 static MacroNode* find_macro(MacroNode *head, const char *name);
 static MacroNode* add_macro(MacroNode **head, const char *name);
 static void free_macros(MacroNode *head);
 
 /*
- * The main pre-assembler function - expands all macros in source file
- * Input: path to source .as file, path to output .am file
- * Output: SUCCESS if expansion completed, ERROR if any issues found
+ * the main pre-assembler function - expands all macros in source file
+ * input: path to source .as file, path to output .am file
+ * output: success if expansion completed, error if any issues found
  */
 int expand_macros(const char *source, const char *output) {
     FILE *in, *out;     /* input and output file pointers */
@@ -62,18 +62,18 @@ int expand_macros(const char *source, const char *output) {
         return ERROR;
     }
     
-    /* Process source file line by line */
+    /* process source file line by line */
     while (fgets(line, MAX_LINE_LENGTH, in)) {
         line_num++;
         
-        /* Check line length (error detection)*/
+        /* check line length (error detection)*/
         if (strlen(line) >= MAX_LINE_LENGTH - 1 && line[strlen(line) - 1] != '\n') {
             print_error(line_num, ERR_LINE_TOO_LONG, NULL);
             error_found = TRUE;
             continue;
         }
         
-        /* Skip empty lines and comments - don't write to output */
+        /* skip empty lines and comments - don't write to output */
         if (is_empty_or_comment(line)) {
             continue;
         }
@@ -100,29 +100,29 @@ int expand_macros(const char *source, const char *output) {
             if (mcro_in_middle) continue;
         }
         
-        /* Check for macro definition start */
+        /* check for macro definition start */
         if (strcmp(word, MACRO_START) == 0) {
             char macro_name[MAX_LABEL_LENGTH + 1];
             
-            /* Extract macro name */
+            /* extract macro name */
             line_ptr = skip_whitespace(line_ptr + strlen(word));    /* skip the "mcro" keyword to get the macro name */
             extract_word(line_ptr, macro_name, MAX_LABEL_LENGTH + 1);
             
-            /* Validate macro name (error detection) */
+            /* validate macro name (error detection) */
             if (!is_valid_label(macro_name)) {
                 print_error(line_num, ERR_MACRO_NAME, macro_name);
                 error_found = TRUE;
                 continue;
             }
             
-            /* Check for duplicate macro (error detection) */
+            /* check for duplicate macro (error detection) */
             if (find_macro(macro_table, macro_name) != NULL) {
                 print_error(line_num, ERR_DUPLICATE_LABEL, macro_name);
                 error_found = TRUE;
                 continue;
             }
             
-            /* Create new macro */
+            /* create new macro */
             current_macro = add_macro(&macro_table, macro_name);
             /* if memory allocation failed clean up and exit (error detection) */
             if (current_macro == NULL) {
@@ -161,7 +161,7 @@ int expand_macros(const char *source, const char *output) {
             continue;
         }
         
-        /* If currently defining a macro, add current line to macro */
+        /* if currently defining a macro, add current line to macro */
         if (in_macro_definition) {
             /* check if macro body exceeds maximum length (error detection) */
             if (current_macro->line_count >= MAX_MACRO_LINES) {
@@ -175,26 +175,26 @@ int expand_macros(const char *source, const char *output) {
             continue;
         }
         
-        /* Check if this is a macro call */
+        /* check if this is a macro call */
         found_macro = find_macro(macro_table, word);
         if (found_macro != NULL) {
-            /* Macro call - expand macro write all macro lines to output file */
+            /* macro call - expand macro write all macro lines to output file */
             for (i = 0; i < found_macro->line_count; i++) {
                 fputs(found_macro->lines[i], out);
             }
         } else {
-            /* Regular line - write to output file as is*/
+            /* regular line - write to output file as is*/
             fputs(line, out);
         }
     }
     
-    /* Check for unclosed macro (error detection) */
+    /* check for unclosed macro (error detection) */
     if (in_macro_definition) {
         print_error(line_num, ERR_MACRO_UNCLOSED, current_macro->name);
         error_found = TRUE;
     }
     
-    /* Cleanup */
+    /* cleanup */
     fclose(in);
     fclose(out);
     free_macros(macro_table);
@@ -207,9 +207,9 @@ int expand_macros(const char *source, const char *output) {
 }
 
 /*
- * Searches the macro table for a macro by name
- * Input: head of macro list, name to search for
- * Output: pointer to matching MacroNode, NULL if not found
+ * searches the macro table for a macro by name
+ * input: head of macro list, name to search for
+ * output: pointer to matching MacroNode, NULL if not found
  */
 static MacroNode* find_macro(MacroNode *head, const char *name) {
     MacroNode *current = head;
@@ -225,9 +225,9 @@ static MacroNode* find_macro(MacroNode *head, const char *name) {
 }
 
 /*
- * Adds a new macro to the macro table
- * Input: pointer to head of macro list, name of new macro
- * Output: pointer to the new MacroNode, NULL if memory allocation failed
+ * adds a new macro to the macro table
+ * input: pointer to head of macro list, name of new macro
+ * output: pointer to the new MacroNode, NULL if memory allocation failed
  */
 static MacroNode* add_macro(MacroNode **head, const char *name) {
     MacroNode *new_macro = (MacroNode*)malloc(sizeof(MacroNode));
@@ -245,8 +245,8 @@ static MacroNode* add_macro(MacroNode **head, const char *name) {
 }
 
 /*
- * Frees all dynamically allocated macro nodes in the macro table
- * Input: head of macro list
+ * frees all dynamically allocated macro nodes in the macro table
+ * input: head of macro list
  */
 static void free_macros(MacroNode *head) {
     MacroNode *current = head;

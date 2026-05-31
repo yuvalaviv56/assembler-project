@@ -2,13 +2,13 @@
  * first_pass.c
  * First pass of the assembler - first of two scans over the post-macro-expansion (.am) file.
  *
- * First pass responsibilities:
- * - Build the symbol table by storing each label and its corresponding memory address as an entry
- * - Compute and store the properties of the first word of each instruction into the code image as a 12-bit encoded word (opcode, funct, addressing modes)
- * - compute and store operand words whose values are known immediately (immediate values and register numbers)
- * - Reserve space in the code image for direct and relative address operands (filled in by the second pass)
- * - Store .data and .string values in the data image
- * - Track IC and DC to produce the final memory layout
+ *First pass responsibilities:
+ * Build the symbol table, 
+ * store the properties of the first word of each instruction into the code image as a 12-bit word (opcode, funct, addressing modes),
+ * compute and store operand words whose values are known immediately (immediate values and register numbers), 
+ * reserve space in the code image for values filled in by the second pass, 
+ * store .data and .string values in the data image and track IC and DC to produce the final memory layout.
+ *
  *
  * Note: .entry directives are skipped here and handled in the second pass,
  * since a label may be used before it is defined in the file.
@@ -56,9 +56,9 @@ static const OperationInfo OPERATIONS[] = {
 };
 
 /*
- * Looks up an operation by name and retrieves the details of its properties
- * Input: operation name string, pointers to store the opcode, funct, and operand count values (any can be NULL)
- * Output: TRUE if operation found, FALSE otherwise
+ * looks up an operation by name and retrieves the details of its properties
+ * input: operation name string, pointers to store the opcode, funct, and operand count values (any can be NULL)
+ * output: true if operation found, false otherwise
  */
 int get_operation_info(const char *operation, int *opcode, int *funct, int *num_operands) {
     int i;
@@ -80,15 +80,15 @@ int get_operation_info(const char *operation, int *opcode, int *funct, int *num_
 }
 
 /*
- * Calculates the number of memory words an instruction occupies
- * Input: operation name, source operand string, destination operand string
- * Output: number of words (1 for no operands, and up to 3 for two operands)
+ * calculates the number of memory words an instruction occupies
+ * input: operation name, source operand string, destination operand string
+ * output: number of words (1 for no operands, and up to 3 for two operands)
  */
 int calculate_instruction_length(const char *operation, const char *source, const char *dest) {
     int length = 1;     /* word count (first word always included) */
     int num_operands;   /* number of operands expected by this operation */
 
-    /* operation not found in table - return default length of 1 */
+
     if (!get_operation_info(operation, NULL, NULL, &num_operands)) {
         return 1;
     }
@@ -102,7 +102,7 @@ int calculate_instruction_length(const char *operation, const char *source, cons
         return length;
     }
 
-    /* each operand gets its own word */
+    
     if (num_operands == 2 && source != NULL && dest != NULL) {
         length += 2; 
     }
@@ -111,8 +111,8 @@ int calculate_instruction_length(const char *operation, const char *source, cons
 }
 
 /*
- * Encodes and stores the first word of an instruction into the code image in a 12 bit format
- * Input: memory image, operation name, source operand, destination operand
+ * encodes and stores the first word of an instruction into the code image in a 12 bit format
+ * input: memory image, operation name, source operand, destination operand
  */
 static void encode_first_word(MemoryImage *memory, const char *operation,
                               const char *source, const char *dest) {
@@ -125,38 +125,32 @@ static void encode_first_word(MemoryImage *memory, const char *operation,
         return;
     }
 
-    /* Encode opcode (bits 11-8) */
     word |= ((unsigned int)opcode & 0xF) << 8;
 
-    /* Encode funct (bits 7-4) */
     word |= ((unsigned int)funct & 0xF) << 4;
 
-    /* Encode dest addressing mode (bits 1-0) */
     if (num_operands >= 1 && dest != NULL) {
         dest_mode = identify_addressing_mode(dest);
         word |= ((unsigned int)dest_mode & 0x3) << 0;
     }
 
-    /* Encode source addressing mode (bits 3-2) */
     if (num_operands == 2 && source != NULL) {
         src_mode = identify_addressing_mode(source);
         word |= ((unsigned int)src_mode & 0x3) << 2;
     }
 
-    /* store the encoded bitwise representation into the code image at the current IC position */
     memory->code[memory->IC].word = word & 0xFFF;
     memory->code[memory->IC].are = ARE_ABSOLUTE;
 }
 
 /*
- * Validates an operand and detects invalid register names like 'r8' (error detection)
- * Input: operand string, line number (for error reporting)
- * Output: SUCCESS if valid, ERROR if invalid register detected
+ * validates an operand and detects invalid register names like 'r8' (error detection)
+ * input: operand string, line number (for error reporting)
+ * output: success if valid, error if invalid register detected
  */
 static int validate_operand(const char *operand, int line_num) {
     int reg_num; /* temp variable for parse_register */
 
-    /* return success for empty or NULL operand */
     if (operand == NULL || *operand == '\0') return SUCCESS;
 
     /* Check for register syntax with invalid number like 'r8' */
@@ -172,8 +166,8 @@ static int validate_operand(const char *operand, int line_num) {
 
 /*
  * handles a .data directive by storing the accompanying int values in the data image
- * Input: parameter string (comma-separated integers), line number (for error reporting), memory image
- * Output: SUCCESS if all values stored, ERROR if invalid input or memory overflow
+ * input: parameter string (comma-separated integers), line number (for error reporting), memory image
+ * output: success if all values stored, error if invalid input or memory overflow
  */
 int process_data_directive(const char *params, int line_num, MemoryImage *memory) {
     char params_copy[MAX_LINE_LENGTH];      /* a copy of the parameters for strtok to break into manageable tokens */
@@ -188,7 +182,7 @@ int process_data_directive(const char *params, int line_num, MemoryImage *memory
 
     safe_strcpy(params_copy, params, MAX_LINE_LENGTH);
 
-    /* initialize the token pointer with the first token and store each comma-separated value */
+    /* initialize the token pointer with the first token and store each comma separated value */
     token = strtok(params_copy, ",");
     while (token != NULL) {
         trim(token);
@@ -209,7 +203,6 @@ int process_data_directive(const char *params, int line_num, MemoryImage *memory
         memory->data[memory->DC].are = ARE_ABSOLUTE;
         memory->DC++;
 
-         /* proceed to next token */
         token = strtok(NULL, ",");
     }
 
@@ -217,9 +210,9 @@ int process_data_directive(const char *params, int line_num, MemoryImage *memory
 }
 
 /*
- * handles a .string directive by storing the ASCII codes of each character in the data image
- * Input: parameter string (quoted string), line number (for error reporting), memory image
- * Output: SUCCESS if string stored, ERROR if missing quotes or memory overflow
+ * handles a .string directive by storing the ascii codes of each character in the data image
+ * input: parameter string (quoted string), line number (for error reporting), memory image
+ * output: success if string stored, error if missing quotes or memory overflow
  */
 int process_string_directive(const char *params, int line_num, MemoryImage *memory) {
     const char *p;      /*pointer to the current char being handled */
@@ -242,9 +235,8 @@ int process_string_directive(const char *params, int line_num, MemoryImage *memo
     p++;
     in_quotes = TRUE;
 
-    /* scan through string's characters and store their ASCII value in the data image */
+    /* scan through string's characters and store their asci value in the data image */
     while (*p != '\0' && *p != '\n') {
-        /* check if we reached the string's end */
         if (*p == STRING_QUOTE) {
             in_quotes = FALSE;
             break;
@@ -269,7 +261,6 @@ int process_string_directive(const char *params, int line_num, MemoryImage *memo
         return ERROR;
     }
 
-    /* make sure data image has space for the 0 word end signal (error detection) */
     if (memory->DC >= MEMORY_SIZE) {
         print_error(line_num, ERR_MEMORY_OVERFLOW, NULL);
         return ERROR;
@@ -283,9 +274,9 @@ int process_string_directive(const char *params, int line_num, MemoryImage *memo
 }
 
 /*
- * Validates a .entry directive - actual handling is done during the second pass
- * Input: parameter string (label name), line number (for error reporting)
- * Output: SUCCESS if parameter exists, ERROR if empty
+ * validates a .entry directive - actual handling is done during the second pass
+ * input: parameter string (label name), line number (for error reporting)
+ * output: success if parameter exists, error if empty
  */
 int process_entry_directive(const char *params, int line_num) {
     /* make sure the directive actually has parameters (error detection) */
@@ -299,8 +290,8 @@ int process_entry_directive(const char *params, int line_num) {
 
 /*
  * handles a .extern directive by adding the external symbol to the symbol table
- * Input: parameter string (label name), line number (for error reporting), symbol table
- * Output: SUCCESS if symbol added, ERROR if invalid name or duplicate
+ * input: parameter string (label name), line number (for error reporting), symbol table
+ * output: success if symbol added, error if invalid name or duplicate
  */
 int process_extern_directive(const char *params, int line_num, SymbolTable *symbol_table) {
     char symbol_name[MAX_LABEL_LENGTH + 1]; /* buffer for external symbol name (+1 for null terminator) */
@@ -330,9 +321,9 @@ int process_extern_directive(const char *params, int line_num, SymbolTable *symb
 }
 
 /*
- * Routes a directive line to the appropriate handler based on its type
- * Input: directive name, parameters, label, line number (for error reporting), symbol table, memory image
- * Output: SUCCESS if directive processed properly, ERROR if invalid input or processing failed
+ * routes a directive line to the appropriate handler based on its type
+ * input: directive name, parameters, label, line number (for error reporting), symbol table, memory image
+ * output: success if directive processed properly, error if invalid input or processing failed
  */
 int process_directive(const char *directive, const char *params, const char *label,
                       int line_num, SymbolTable *symbol_table, MemoryImage *memory) {
@@ -354,29 +345,24 @@ int process_directive(const char *directive, const char *params, const char *lab
 
     if (strcmp(directive, DIR_DATA) == 0) {
         return process_data_directive(params, line_num, memory);
-    }
-
-    if (strcmp(directive, DIR_STRING) == 0) {
+    } else if (strcmp(directive, DIR_STRING) == 0) {
         return process_string_directive(params, line_num, memory);
-    }
-
-    if (strcmp(directive, DIR_ENTRY) == 0) {
+    } else if (strcmp(directive, DIR_ENTRY) == 0) {
         return process_entry_directive(params, line_num);
-    }
-
-    if (strcmp(directive, DIR_EXTERN) == 0) {
+    } else if (strcmp(directive, DIR_EXTERN) == 0) {
         return process_extern_directive(params, line_num, symbol_table);
+    } else {
+        /* directive type was not recognized (error detection) */
+        print_error(line_num, ERR_INVALID_DIRECTIVE, directive);
+        return ERROR;
     }
 
-    /* directive type was not recognized (error detection) */
-    print_error(line_num, ERR_INVALID_DIRECTIVE, directive);
-    return ERROR;
 }
 
 /*
  * handles an instruction line by validating operands, encoding the first word and advancing the IC
- * Input: operation name, operands string, label, line number (for error reporting), symbol table, memory image
- * Output: SUCCESS if instruction processed properly, ERROR if invalid operands or memory overflow
+ * input: operation name, operands string, label, line number (for error reporting), symbol table, memory image
+ * output: success if instruction processed properly, error if invalid operands or memory overflow
  */
 int process_instruction(const char *operation, const char *operands, const char *label,
                         int line_num, SymbolTable *symbol_table, MemoryImage *memory) {
@@ -396,7 +382,7 @@ int process_instruction(const char *operation, const char *operands, const char 
         }
     }
 
-    /* make sure the operation is valid based on the operation table and retrieve its expected operand count (error detection) */
+    /* make sure the operation is valid based on the operation table and get back its expected operand count (error detection) */
     if (!get_operation_info(operation, NULL, NULL, &num_operands_expected)) {
         print_error(line_num, ERR_INVALID_INSTRUCTION, operation);
         return ERROR;
@@ -412,7 +398,6 @@ int process_instruction(const char *operation, const char *operands, const char 
         return ERROR;
     }
 
-    /* validate the appropriate operands based on the instruction's operand count (error detection) */
     if (num_operands_expected == 2) {
         if (validate_operand(source, line_num) == ERROR) return ERROR;
     }
@@ -435,7 +420,6 @@ int process_instruction(const char *operation, const char *operands, const char 
         return ERROR;
     }
 
-    /* call encode_first_word with the appropriate operands based on operand count */
     if (num_operands_expected == 2) {
         encode_first_word(memory, operation, source, dest);
     } else if (num_operands_expected == 1) {
@@ -451,9 +435,9 @@ int process_instruction(const char *operation, const char *operands, const char 
 }
 
 /*
- * The equvilant to the "main" function of the first pass - reads the .am file, builds the symbol table and encodes instruction first words into the code image
- * Input: path to .am file, symbol table, memory image
- * Output: SUCCESS if no errors found, ERROR if any error occurured during the first pass
+ * the equvilant to the "main" function of the first pass - reads the .am file, builds the symbol table and encodes instruction first words into the code image
+ * input: path to .am file, symbol table, memory image
+ * output: success if no errors found, error if any error occurured during the first pass
  */
 int first_pass(const char *filename, SymbolTable *symbol_table, MemoryImage *memory) {
     FILE *file;     /* file pointer to store the .am source file */
